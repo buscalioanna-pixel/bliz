@@ -206,4 +206,130 @@ animation: floatUp 1.8s ease-out forwards; z-index: 15; pointer-events: none;
 </div>
 </div>
 </div>
-<div class="
+<div class="controls">
+<button class="btn btn-skip" id="reportBtn">Reportar</button>
+<button class="btn btn-next" id="nextBtn">Siguiente ➔</button>
+</div>
+<div id="godPanel">
+<div class="god-header">
+<span>👑 MODERACIÓN</span>
+<button id="closeGod">Cerrar</button>
+</div>
+<div class="ai-box">🤖 IA activa.</div>
+<div class="feed-card" id="card1">
+<p style="font-size:12px; color:#ccc;">Alerta detectada.</p>
+<button class="btn-ban" id="banBtn">⛔ BANEAR</button>
+</div>
+</div>
+</div>
+
+<script>
+let localStream = null;
+let peer = null;
+
+let clickCount = 0;
+document.getElementById('secretLogoTrigger').onclick = checkGod;
+document.getElementById('headerLogoTrigger').onclick = checkGod;
+function checkGod() {
+    clickCount++;
+    if (clickCount >= 5) {
+        clickCount = 0;
+        if (prompt("Clave:") === "admin123") {
+            document.getElementById('godBtn').style.display = 'block';
+            alert("¡Modo Dios activo!");
+        }
+    }
+}
+
+document.getElementById('btnEnter').onclick = function() {
+    const y = parseInt(document.getElementById('inputYear').value);
+    if (!y || (new Date().getFullYear() - y) < 18) {
+        alert("Debes ser mayor de 18 años.");
+        return;
+    }
+
+    // Ocultar pantalla de acceso al instante
+    document.getElementById('authScreen').style.display = 'none';
+
+    // Cargar cámara y peer de forma totalmente asíncrona para que no bloquee jamás
+    setTimeout(async () => {
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
+            document.getElementById('selfCamera').srcObject = localStream;
+        } catch(e) {
+            console.log("Cámara error:", e);
+        }
+
+        try {
+            peer = new Peer();
+            peer.on('call', call => {
+                call.answer(localStream);
+                call.on('stream', stream => {
+                    document.getElementById('remoteVideo').srcObject = stream;
+                    document.getElementById('searchState').style.display = 'none';
+                });
+            });
+        } catch(e) {
+            console.log("PeerJS error:", e);
+        }
+    }, 100);
+};
+
+document.getElementById('nextBtn').onclick = () => {
+    document.getElementById('searchState').style.display = 'block';
+    setTimeout(() => document.getElementById('searchState').style.display = 'none', 1500);
+};
+
+document.getElementById('btnMic').onclick = function() {
+    if (localStream) {
+        const t = localStream.getAudioTracks()[0];
+        if (t) {
+            t.enabled = !t.enabled;
+            this.classList.toggle('active', !t.enabled);
+        }
+    }
+};
+
+document.getElementById('btnCam').onclick = function() {
+    if (localStream) {
+        const t = localStream.getVideoTracks()[0];
+        if (t) {
+            t.enabled = !t.enabled;
+            this.classList.toggle('active', !t.enabled);
+        }
+    }
+};
+
+document.getElementById('btnBeauty').onclick = function() {
+    const cam = document.getElementById('selfCamera');
+    cam.classList.toggle('beauty-active');
+    this.style.background = cam.classList.contains('beauty-active') ? '#8B5CF6' : 'rgba(17, 24, 39, 0.75)';
+};
+
+function sendEmoji(e) {
+    const el = document.createElement('div');
+    el.className = 'floating-emoji';
+    el.innerText = e;
+    document.querySelector('.video-container').appendChild(el);
+    setTimeout(() => el.remove(), 1800);
+}
+
+document.getElementById('chatInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && this.value.trim() !== '') {
+        const box = document.getElementById('chatMsgs');
+        const msg = document.createElement('div');
+        msg.className = 'chat-msg';
+        msg.innerHTML = `<strong>Tú</strong>: ${this.value}`;
+        box.appendChild(msg);
+        box.scrollTop = box.scrollHeight;
+        this.value = '';
+    }
+});
+
+document.getElementById('godBtn').onclick = () => document.getElementById('godPanel').style.display = 'flex';
+document.getElementById('closeGod').onclick = () => document.getElementById('godPanel').style.display = 'none';
+document.getElementById('banBtn').onclick = () => alert("Usuario baneado.");
+document.getElementById('reportBtn').onclick = () => alert("Reporte enviado.");
+</script>
+</body>
+</html>
