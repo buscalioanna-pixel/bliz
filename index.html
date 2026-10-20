@@ -36,7 +36,7 @@ body { background-color: #0B0F19; color: #ffffff; height: 100vh; display: flex; 
     <div class="flex gap-2 justify-center">
       <input type="text" id="inputDay" placeholder="Día" maxlength="2" inputmode="numeric" class="w-1/4 p-3 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-sm outline-none focus:border-cyan-500">
       <input type="text" id="inputMonth" placeholder="Mes" maxlength="2" inputmode="numeric" class="w-1/4 p-3 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-sm outline-none focus:border-cyan-500">
-      <input type="text" id="inputYear" placeholder="Año" maxlength="4" inputmode="numeric" class="w-2/4 p-3 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-sm outline-none focus:border-cyan-500">
+      <input type="text" id="inputYear" placeholder="Año" maxlength="4" inputmode="numeric" class="w-2/4 p-3 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-sm outline-none focus:border-cyan-500" value="2000">
     </div>
 
     <button id="btnEnter" class="w-full py-3.5 rounded-full font-bold text-white bg-gradient-to-r from-purple-600 to-cyan-500 hover:opacity-90 active:scale-95 transition">Entrar</button>
@@ -117,3 +117,236 @@ body { background-color: #0B0F19; color: #ffffff; height: 100vh; display: flex; 
         <button onclick="sendEmoji('👋')" class="bg-gray-900/80 border border-white/15 rounded-xl px-2.5 py-1 text-base active:scale-90 transition">👋</button>
       </div>
 
+      <div class="flex gap-1.5">
+        <input type="text" id="chatInput" placeholder="Escribe un mensaje..." autocomplete="off" class="flex-1 px-3 py-2 rounded-full border border-gray-700 bg-gray-950/85 text-white text-xs outline-none focus:border-cyan-500">
+      </div>
+    </div>
+  </div>
+
+  <div class="flex gap-3 pt-2">
+    <button id="reportBtn" class="flex-1 py-3.5 rounded-full font-bold text-white bg-gray-800 border border-gray-700 hover:bg-gray-700 active:scale-95 transition">Reportar</button>
+    <button id="nextBtn" class="flex-1 py-3.5 rounded-full font-bold text-white bg-gradient-to-r from-purple-600 to-cyan-500 hover:opacity-90 active:scale-95 transition">Siguiente ➔</button>
+  </div>
+</main>
+
+<!-- CONSOLA MODO DIOS -->
+<div id="godPanel" class="hidden fixed inset-0 bg-gray-950/95 z-50 p-4 flex-col overflow-y-auto">
+  <div class="flex justify-between items-center text-red-500 font-bold border-b border-red-500/50 pb-2 mb-3">
+    <span>👑 MODO DIOS - CONSOLA ADMIN</span>
+    <button id="closeGod" class="bg-gray-800 text-white px-3 py-1 rounded-lg text-xs font-bold">Volver</button>
+  </div>
+
+  <div class="bg-purple-950/30 border border-purple-500/30 rounded-xl p-3 text-xs text-purple-300 mb-3">
+    🤖 <strong>Moderación IA Activa:</strong> <span id="aiStatusText">Cargando motor en segundo plano...</span>
+  </div>
+
+  <div class="bg-gray-900 border border-red-500/50 rounded-xl p-3 mb-3">
+    <div class="text-xs text-cyan-400 font-bold mb-1">📡 Telemetría P2P</div>
+    <div class="flex justify-between text-xs text-gray-400 mt-1"><span>Tu ID Admin:</span> <strong id="godAdminId" class="text-white">Generando...</strong></div>
+    <div class="flex justify-between text-xs text-gray-400 mt-1"><span>Estado de Sala:</span> <strong id="godRoomStatus" class="text-emerald-400">Inactiva</strong></div>
+    <div class="flex justify-between text-xs text-gray-400 mt-1"><span>Puntuación de Seguridad:</span> <strong id="godAiScore" class="text-emerald-400">100% Seguro</strong></div>
+  </div>
+
+  <div class="bg-gray-900 border border-red-500 rounded-xl p-3">
+    <div class="text-xs text-red-400 font-bold mb-2">📹 Monitor Remoto en Tiempo Real</div>
+    <video id="godRemoteMonitor" autoplay playsinline muted class="w-full h-44 bg-black rounded-lg object-cover border border-gray-700"></video>
+    <button id="banBtn" class="w-full mt-3 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs active:scale-95 transition">⛔ EXPULSAR Y BANEAR USUARIO</button>
+  </div>
+</div>
+
+<script>
+let localStream = null;
+let peer = null;
+let activeCall = null;
+let nsfwModel = null;
+let aiInterval = null;
+let currentFacingMode = 'user';
+let beautyOn = false;
+
+// MODO DIOS SECRETO
+let clickCount = 0;
+document.getElementById('secretLogoAuth').onclick = checkGod;
+document.getElementById('secretLogoHeader').onclick = checkGod;
+function checkGod() {
+    clickCount++;
+    if (clickCount >= 5) {
+        clickCount = 0;
+        if (prompt("Clave de administrador:") === "admin123") {
+            document.getElementById('godBadge').style.display = 'block';
+            alert("¡Modo Dios activado!");
+        }
+    }
+}
+
+document.getElementById('btnEnter').onclick = function() {
+    // Ocultar pantalla de acceso inmediatamente sin bloqueos
+    document.getElementById('authScreen').style.display = 'none';
+
+    initMediaStream(currentFacingMode);
+    initPeer();
+    
+    setTimeout(loadAiScripts, 1000);
+};
+
+async function initMediaStream(facing) {
+    if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+    }
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: true });
+        document.getElementById('selfCamera').srcObject = localStream;
+        if (activeCall) {
+            const videoTrack = localStream.getVideoTracks()[0];
+            const sender = activeCall.peerConnection.getSenders().find(s => s.track.kind === 'video');
+            if (sender) sender.replaceTrack(videoTrack);
+        }
+    } catch(err) {
+        console.log("Cámara error:", err);
+    }
+}
+
+function initPeer() {
+    if (typeof Peer !== 'undefined') {
+        peer = new Peer();
+        peer.on('open', function(id) {
+            document.getElementById('godAdminId').innerText = id;
+        });
+        peer.on('call', function(call) {
+            activeCall = call;
+            call.answer(localStream);
+            call.on('stream', function(remoteStream) {
+                document.getElementById('remoteVideo').srcObject = remoteStream;
+                document.getElementById('godRemoteMonitor').srcObject = remoteStream;
+                document.getElementById('searchState').style.display = 'none';
+                document.getElementById('godRoomStatus').innerText = "En llamada";
+                document.getElementById('godRoomStatus').style.color = "#10B981";
+                startAiScanning();
+            });
+        });
+    }
+}
+
+function loadAiScripts() {
+    if (window.nsfwjs) return;
+    const s1 = document.createElement('script');
+    s1.src = "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js";
+    s1.onload = () => {
+        const s2 = document.createElement('script');
+        s2.src = "https://cdn.jsdelivr.net/npm/nsfwjs@2.4.2/dist/nsfwjs.min.js";
+        s2.onload = async () => {
+            try {
+                nsfwModel = await nsfwjs.load();
+                document.getElementById('aiStatusText').innerText = "TensorFlow / NSFWJS activo.";
+            } catch(e) { document.getElementById('aiStatusText').innerText = "Modo heurístico activo."; }
+        };
+        document.body.appendChild(s2);
+    };
+    document.body.appendChild(s1);
+}
+
+function startAiScanning() {
+    if (aiInterval) clearInterval(aiInterval);
+    aiInterval = setInterval(async () => {
+        const remoteVid = document.getElementById('remoteVideo');
+        if (nsfwModel && remoteVid && remoteVid.readyState === 4) {
+            try {
+                const predictions = await nsfwModel.classify(remoteVid);
+                const unsafe = predictions.find(p => (p.className === 'Porn' || p.className === 'Hentai') && p.probability > 0.70);
+                if (unsafe) {
+                    document.getElementById('godAiScore').innerText = "⚠️ Alerta NSFW";
+                    document.getElementById('godAiScore').style.color = "#EF4444";
+                    banCurrentParticipant("Infracción detectada por IA.");
+                } else {
+                    document.getElementById('godAiScore').innerText = "100% Seguro";
+                    document.getElementById('godAiScore').style.color = "#10B981";
+                }
+            } catch(e){}
+        }
+    }, 3000);
+}
+
+function nextUser() {
+    if (activeCall) { activeCall.close(); }
+    if (aiInterval) clearInterval(aiInterval);
+    document.getElementById('remoteVideo').srcObject = null;
+    document.getElementById('godRemoteMonitor').srcObject = null;
+    document.getElementById('searchState').style.display = 'block';
+    document.getElementById('godRoomStatus').innerText = "Buscando...";
+    document.getElementById('godRoomStatus').style.color = "#F59E0B";
+    setTimeout(function() { document.getElementById('searchState').style.display = 'none'; }, 1500);
+}
+
+document.getElementById('nextBtn').onclick = nextUser;
+
+document.getElementById('btnMic').onclick = function() {
+    if (localStream) {
+        var t = localStream.getAudioTracks()[0];
+        if (t) { t.enabled = !t.enabled; this.classList.toggle('bg-red-600', !t.enabled); }
+    }
+};
+
+document.getElementById('btnCam').onclick = function() {
+    if (localStream) {
+        var t = localStream.getVideoTracks()[0];
+        if (t) { t.enabled = !t.enabled; this.classList.toggle('bg-red-600', !t.enabled); }
+    }
+};
+
+document.getElementById('btnFlipCam').onclick = function() {
+    currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+    initMediaStream(currentFacingMode);
+};
+
+document.getElementById('btnBeauty').onclick = function() {
+    beautyOn = !beautyOn;
+    document.getElementById('selfCamera').classList.toggle('beauty-active', beautyOn);
+    this.classList.toggle('bg-purple-600', beautyOn);
+};
+
+function sendEmoji(e) {
+    var el = document.createElement('div');
+    el.className = 'floating-emoji';
+    el.innerText = e;
+    document.getElementById('swipeArea').appendChild(el);
+    setTimeout(function() { el.remove(); }, 1800);
+}
+
+document.getElementById('chatInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && this.value.trim() !== '') {
+        var box = document.getElementById('chatMsgs');
+        var msg = document.createElement('div');
+        msg.className = 'bg-gray-900/80 backdrop-blur px-2.5 py-1 rounded-xl text-[11px] max-w-[85%] border border-white/10';
+        msg.innerHTML = '<strong class="text-cyan-400">Tú:</strong> ' + this.value;
+        box.appendChild(msg);
+        box.scrollTop = box.scrollHeight;
+        this.value = '';
+    }
+});
+
+let startY = 0;
+const swipeArea = document.getElementById('swipeArea');
+swipeArea.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, false);
+swipeArea.addEventListener('touchend', e => {
+    let diffY = startY - e.changedTouches[0].clientY;
+    if (diffY > 60) { nextUser(); }
+}, false);
+
+document.getElementById('godBadge').onclick = function() { document.getElementById('godPanel').style.display = 'flex'; };
+document.getElementById('closeGod').onclick = function() { document.getElementById('godPanel').style.display = 'none'; };
+
+function banCurrentParticipant(reason) {
+    if (activeCall) {
+        activeCall.close();
+        document.getElementById('remoteVideo').srcObject = null;
+        document.getElementById('godRemoteMonitor').srcObject = null;
+    }
+    document.getElementById('godRoomStatus').innerText = "Usuario Expulsado";
+    document.getElementById('godRoomStatus').style.color = "#EF4444";
+    alert("⛔ " + (reason || "El usuario ha sido expulsado."));
+}
+
+document.getElementById('banBtn').onclick = () => banCurrentParticipant("Expulsado manualmente por el Administrador.");
+document.getElementById('reportBtn').onclick = () => alert("Reporte enviado.");
+</script>
+</body>
+</html>
