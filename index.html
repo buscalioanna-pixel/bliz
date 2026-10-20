@@ -85,7 +85,7 @@ border-radius: 20px; overflow: hidden; display: flex; justify-content: center; a
 position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; background: #05050a;
 }
 
-/* PANTALLA DE BÚSQUEDA LIMPIA */
+/* ESTADO DE BÚSQUEDA */
 #searchState { text-align: center; color: #9CA3AF; z-index: 3; position: absolute; pointer-events: none; }
 
 /* MI CÁMARA FLOTANTE */
@@ -96,7 +96,7 @@ transition: filter 0.3s ease;
 }
 .beauty-active { filter: brightness(1.1) contrast(1.05) saturate(1.1) blur(0.3px); }
 
-/* CONTROLES DE CÁMARA (OCULTOS / LIMPIOS UNA VEZ DENTRO) */
+/* CONTROLES DE CÁMARA */
 .cam-controls {
 position: absolute; top: 12px; left: 12px; display: flex; flex-direction: column; gap: 8px; z-index: 10;
 }
@@ -147,42 +147,3 @@ animation: floatUp 1.8s ease-out forwards; z-index: 15; pointer-events: none;
 .btn-next { background: linear-gradient(135deg, #8B5CF6, #06B6D4); }
 
 #godPanel { display: none; position: absolute; inset: 0; background: rgba(11,15,25,0.96); z-index: 100; padding: 15px; flex-direction: column; }
-.god-header { display: flex; justify-content: space-between; color: #EF4444; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #EF4444; padding-bottom: 8px; }
-#closeGod { background: #1F2937; color: #fff; border: none; padding: 4px 8px; border-radius: 5px; cursor: pointer; }
-.ai-box { font-size: 11px; color: #C084FC; background: rgba(139,92,246,0.1); padding: 8px; border-radius: 6px; }
-.feed-card { background: #111827; border: 1px solid #EF4444; border-radius: 10px; padding: 10px; margin-top: 10px; }
-.btn-ban { width: 100%; background: #EF4444; color: #fff; border: none; padding: 8px; border-radius: 6px; margin-top: 8px; font-weight: bold; cursor: pointer; }
-</style>
-</head>
-<body>
-
-<!-- PANTALLA INICIAL DE REGISTRO +18 -->
-<div id="authScreen">
-<div class="auth-card">
-<div class="auth-title" id="secretLogoTrigger">⚡ BLIZ</div>
-<p class="auth-sub">Introduce tu fecha de nacimiento (+18)</p>
-
-<div class="date-container">
-<input type="text" id="inputDay" class="date-input day" placeholder="Día" maxlength="2" inputmode="numeric">
-<input type="text" id="inputMonth" class="date-input month" placeholder="Mes" maxlength="2" inputmode="numeric">
-<input type="text" id="inputYear" class="date-input year" placeholder="Año" maxlength="4" inputmode="numeric">
-</div>
-
-<button class="btn-auth" id="btnEnter">Entrar</button>
-
-<p class="terms-text">Al entrar confirmas que eres mayor de edad y aceptas el uso de la cámara para el videochat.</p>
-<div class="legal-links">
-<span onclick="alert('Bliz es una plataforma de comunicación P2P. Prohibido menores de 18 años y contenido inapropiado.')">Términos</span>
-<span onclick="alert('No almacenamos grabaciones de video en servidores externos. Las transmisiones son cifradas de extremo a extremo.')">Privacidad</span>
-</div>
-</div>
-</div>
-
-<!-- CABECERA -->
-<header>
-<div class="logo" id="headerLogoTrigger">⚡ BLIZ</div>
-<div class="god-badge" id="godBtn">👑 MODO DIOS</div>
-</header>
-
-<!-- BARRA DE FILTROS -->
-<div class="filter-bar">
