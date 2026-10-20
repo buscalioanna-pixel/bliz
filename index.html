@@ -8,15 +8,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Bliz - Videochat Global</title>
 
-<link rel="manifest" href="data:application/manifest+json,{
-%22name%22: %22Bliz Videochat%22,
-%22short_name%22: %22Bliz%22,
-%22start_url%22: %22./%22,
-%22display%22: %22standalone%22,
-%22background_color%22: %22%230B0F19%22,
-%22theme_color%22: %22%230B0F19%22
-}">
-
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; user-select: none; }
 body { background-color: #0B0F19; color: #ffffff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; touch-action: manipulation; }
@@ -87,14 +78,12 @@ flex: 1; position: relative; background: #000; margin: 8px;
 border-radius: 20px; overflow: hidden; display: flex; justify-content: center; align-items: center; border: 1px solid #1E293B;
 }
 
-/* VÍDEO REMOTO (OCUPA TODO EL FONDO) */
 #remoteVideo {
 position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; background: #05050a;
 }
 
 #searchState { text-align: center; color: #9CA3AF; z-index: 3; pointer-events: none; position: absolute; }
 
-/* MI CÁMARA FLOTANTE */
 #selfCamera {
 position: absolute; top: 12px; right: 12px; width: 95px; height: 135px;
 object-fit: cover; background: #111827; border-radius: 14px; border: 2px solid #8B5CF6; z-index: 10;
@@ -106,4 +95,82 @@ transition: filter 0.3s ease;
 position: absolute; top: 12px; left: 12px; display: flex; flex-direction: column; gap: 8px; z-index: 10;
 }
 .icon-btn {
-width: 36px; height: 36px; border-radius: 50%; background:
+width: 36px; height: 36px; border-radius: 50%; background: rgba(17, 24, 39, 0.75);
+border: 1px solid rgba(255,255,255,0.2); color: #fff; display: flex; justify-content: center;
+align-items: center; font-size: 14px; cursor: pointer; backdrop-filter: blur(4px);
+}
+.icon-btn.active { background: #EF4444; border-color: #EF4444; }
+
+.chat-overlay {
+position: absolute; bottom: 12px; left: 12px; right: 12px; display: flex; flex-direction: column; gap: 8px; z-index: 10;
+}
+.chat-messages {
+max-height: 90px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; pointer-events: none;
+}
+.chat-msg {
+background: rgba(15, 23, 42, 0.75); padding: 5px 10px; border-radius: 12px; font-size: 11px;
+max-width: 80%; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.08);
+}
+.chat-msg .translated { color: #06B6D4; font-size: 10px; display: block; margin-top: 2px; }
+
+.emoji-bar { display: flex; gap: 8px; }
+.emoji-btn {
+background: rgba(17, 24, 39, 0.8); border: 1px solid rgba(255,255,255,0.15);
+border-radius: 15px; padding: 4px 10px; font-size: 16px; cursor: pointer;
+}
+
+.chat-input-box { display: flex; gap: 6px; }
+.chat-input {
+flex: 1; padding: 8px 12px; border-radius: 20px; border: 1px solid #374151;
+background: rgba(11, 15, 25, 0.85); color: #fff; font-size: 12px; outline: none;
+}
+
+.floating-emoji {
+position: absolute; bottom: 60px; right: 20px; font-size: 28px;
+animation: floatUp 1.8s ease-out forwards; z-index: 15; pointer-events: none;
+}
+@keyframes floatUp {
+0% { opacity: 1; transform: translateY(0) scale(1); }
+100% { opacity: 0; transform: translateY(-120px) scale(1.5); }
+}
+
+.controls { padding: 12px 16px; display: flex; gap: 10px; background: #111827; }
+.btn { flex: 1; padding: 14px; border-radius: 25px; border: none; font-weight: bold; color: #fff; cursor: pointer; font-size: 15px; }
+.btn-skip { background: #1F2937; border: 1px solid #374151; }
+.btn-next { background: linear-gradient(135deg, #8B5CF6, #06B6D4); }
+
+#godPanel { display: none; position: absolute; inset: 0; background: rgba(11,15,25,0.96); z-index: 100; padding: 15px; flex-direction: column; }
+.god-header { display: flex; justify-content: space-between; color: #EF4444; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #EF4444; padding-bottom: 8px; }
+#closeGod { background: #1F2937; color: #fff; border: none; padding: 4px 8px; border-radius: 5px; cursor: pointer; }
+.ai-box { font-size: 11px; color: #C084FC; background: rgba(139,92,246,0.1); padding: 8px; border-radius: 6px; }
+.feed-card { background: #111827; border: 1px solid #EF4444; border-radius: 10px; padding: 10px; margin-top: 10px; }
+.btn-ban { width: 100%; background: #EF4444; color: #fff; border: none; padding: 8px; border-radius: 6px; margin-top: 8px; font-weight: bold; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<!-- REGISTRO Y VERIFICACIÓN +18 -->
+<div id="authScreen">
+<div class="auth-card">
+<div class="auth-title" id="secretLogoTrigger">⚡ BLIZ</div>
+<p class="auth-sub">Selecciona tu fecha de nacimiento (+18)</p>
+
+<div class="date-container">
+<select id="selectDay" class="date-select day">
+<option value="">Día</option>
+<option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option>
+<option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option>
+<option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option>
+</select>
+
+<select id="selectMonth" class="date-select month">
+<option value="">Mes</option>
+<option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+<option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+<option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+<option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+</select>
+
+<select id="selectYear" class="date-select year">
+<option value="">Año</option>
+<option value="2006">2006</option><option value="2005">2005</option><option value="2004">2004</option><option value="2003">2003</option><option value="2002">
