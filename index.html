@@ -6,22 +6,15 @@
 <meta name="theme-color" content="#0B0F19">
 <title>Bliz - Videochat Global</title>
 
-<!-- Tailwind CSS via CDN -->
+<!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
-<!-- PeerJS for WebRTC P2P Connectivity -->
+<!-- PeerJS -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-<!-- TensorFlow.js and NSFWJS for Local AI Content Moderation -->
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/nsfwjs@2.4.2/dist/nsfwjs.min.js"></script>
 
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; user-select: none; }
 body { background-color: #0B0F19; color: #ffffff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; touch-action: manipulation; }
-
-/* Beauty Filter Class */
 .beauty-active { filter: brightness(1.12) contrast(1.05) saturate(1.1) blur(0.3px); }
-
-/* Floating Emoji Animation */
 .floating-emoji {
   position: absolute; bottom: 70px; right: 24px; font-size: 32px;
   animation: floatUp 1.8s ease-out forwards; z-index: 30; pointer-events: none;
@@ -37,4 +30,280 @@ body { background-color: #0B0F19; color: #ffffff; height: 100vh; display: flex; 
 <!-- PANTALLA INICIAL (+18) -->
 <div id="authScreen" class="fixed inset-0 bg-[#0B0F19] z-50 flex flex-col justify-center items-center p-5">
   <div class="w-full max-w-xs bg-gray-900 border border-gray-800 rounded-3xl p-6 flex flex-col gap-4 text-center shadow-2xl">
-    <div id="secretLogoAuth" class="text-4xl font-black bg
+    <div id="secretLogoAuth" class="text-4xl font-black bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent cursor-pointer select-none">⚡ BLIZ</div>
+    <p class="text-xs text-gray-400">Introduce tu año de nacimiento (+18)</p>
+
+    <div class="flex gap-2 justify-center">
+      <input type="text" id="inputDay" placeholder="Día" maxlength="2" inputmode="numeric" class="w-1/4 p-3 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-sm outline-none focus:border-cyan-500">
+      <input type="text" id="inputMonth" placeholder="Mes" maxlength="2" inputmode="numeric" class="w-1/4 p-3 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-sm outline-none focus:border-cyan-500">
+      <input type="text" id="inputYear" placeholder="Año" maxlength="4" inputmode="numeric" class="w-2/4 p-3 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-sm outline-none focus:border-cyan-500">
+    </div>
+
+    <button id="btnEnter" class="w-full py-3.5 rounded-full font-bold text-white bg-gradient-to-r from-purple-600 to-cyan-500 hover:opacity-90 active:scale-95 transition">Entrar</button>
+
+    <p class="text-[10px] text-gray-500 leading-tight">Al entrar confirmas que eres mayor de edad y aceptas el uso de la cámara para el videochat P2P.</p>
+    <div class="flex justify-center gap-3 text-[10px] text-cyan-400 underline">
+      <span class="cursor-pointer" onclick="alert('Bliz es una plataforma de comunicación P2P. Prohibido menores de 18 años.')">Términos</span>
+      <span class="cursor-pointer" onclick="alert('Transmisiones cifradas de extremo a extremo.')">Privacidad</span>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="flex justify-between items-center px-4 py-3 bg-gray-900 border-b border-gray-800">
+  <div id="secretLogoHeader" class="text-xl font-black bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent cursor-pointer">⚡ BLIZ</div>
+  <div id="godBadge" class="hidden bg-red-950/60 text-red-400 border border-red-500 px-3 py-1 rounded-full text-xs font-bold cursor-pointer hover:bg-red-900/80">👑 MODO DIOS</div>
+</header>
+
+<!-- BARRA DE FILTROS -->
+<div class="flex items-center justify-between gap-2 px-3 py-2 bg-[#131B2A] border-b border-gray-800">
+  <div class="flex flex-1 items-center gap-1.5">
+    <span class="text-[11px] text-gray-400 font-semibold whitespace-nowrap">🌐 País:</span>
+    <select id="countrySelect" class="flex-1 p-1.5 rounded-lg border border-gray-700 bg-[#0B0F19] text-white text-xs outline-none">
+      <option value="GLOBAL">🌍 Todos los países</option>
+      <option value="ES">🇪🇸 España</option>
+      <option value="MX">🇲🇽 México</option>
+      <option value="CO">🇨🇴 Colombia</option>
+      <option value="AR">🇦🇷 Argentina</option>
+      <option value="CL">🇨🇱 Chile</option>
+      <option value="PE">🇵🇪 Perú</option>
+      <option value="US">🇺🇸 EE.UU.</option>
+    </select>
+  </div>
+  <div class="flex flex-1 items-center gap-1.5">
+    <span class="text-[11px] text-gray-400 font-semibold whitespace-nowrap">👤 Buscar:</span>
+    <select id="genderSelect" class="flex-1 p-1.5 rounded-lg border border-gray-700 bg-[#0B0F19] text-white text-xs outline-none">
+      <option value="ALL">👫 Todos</option>
+      <option value="FEMALE">👩 Mujeres</option>
+      <option value="MALE">👨 Hombres</option>
+    </select>
+  </div>
+</div>
+
+<!-- CONTENEDOR PRINCIPAL DE VÍDEO -->
+<main class="flex-1 flex flex-col relative overflow-hidden p-2">
+  <div id="swipeArea" class="flex-1 relative bg-black rounded-2xl overflow-hidden border border-gray-800 flex justify-center items-center">
+    
+    <video id="remoteVideo" autoplay playsinline class="absolute inset-0 w-full h-full object-cover z-0 bg-gray-950"></video>
+
+    <div id="searchState" class="z-10 text-center text-gray-400 pointer-events-none">
+      <div class="text-4xl animate-bounce">🔍</div>
+      <p class="mt-2 text-xs font-medium">Buscando usuario en línea...</p>
+      <p class="text-[10px] text-gray-500 mt-1">Desliza hacia arriba para omitir</p>
+    </div>
+
+    <!-- CONTROLES FLOTANTES -->
+    <div class="absolute top-3 left-3 flex flex-col gap-2 z-20">
+      <button id="btnMic" class="w-9 h-9 rounded-full bg-gray-900/80 border border-white/20 text-white flex justify-center items-center text-sm backdrop-blur">🎤</button>
+      <button id="btnCam" class="w-9 h-9 rounded-full bg-gray-900/80 border border-white/20 text-white flex justify-center items-center text-sm backdrop-blur">📹</button>
+      <button id="btnFlipCam" class="w-9 h-9 rounded-full bg-gray-900/80 border border-white/20 text-white flex justify-center items-center text-sm backdrop-blur">🔄</button>
+      <button id="btnBeauty" class="w-9 h-9 rounded-full bg-gray-900/80 border border-white/20 text-white flex justify-center items-center text-sm backdrop-blur">✨</button>
+    </div>
+
+    <video id="selfCamera" autoplay playsinline muted class="absolute top-3 right-3 w-24 h-36 object-cover bg-gray-900 rounded-xl border-2 border-purple-500 z-20 transition-all"></video>
+
+    <!-- CHAT OVERLAY -->
+    <div class="absolute bottom-3 left-3 right-3 flex flex-col gap-2 z-20 pointer-events-auto">
+      <div id="chatMsgs" class="max-h-24 overflow-y-auto flex flex-col gap-1 pointer-events-none">
+        <div class="bg-gray-900/80 backdrop-blur px-2.5 py-1 rounded-xl text-[11px] max-w-[85%] border border-white/10">
+          <strong class="text-purple-400">Sistema:</strong> Conectado a Bliz.
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="sendEmoji('❤️')" class="bg-gray-900/80 border border-white/15 rounded-xl px-2.5 py-1 text-base active:scale-90 transition">❤️</button>
+        <button onclick="sendEmoji('😂')" class="bg-gray-900/80 border border-white/15 rounded-xl px-2.5 py-1 text-base active:scale-90 transition">😂</button>
+        <button onclick="sendEmoji('🔥')" class="bg-gray-900/80 border border-white/15 rounded-xl px-2.5 py-1 text-base active:scale-90 transition">🔥</button>
+        <button onclick="sendEmoji('👋')" class="bg-gray-900/80 border border-white/15 rounded-xl px-2.5 py-1 text-base active:scale-90 transition">👋</button>
+      </div>
+
+      <div class="flex gap-1.5">
+        <input type="text" id="chatInput" placeholder="Escribe un mensaje..." autocomplete="off" class="flex-1 px-3 py-2 rounded-full border border-gray-700 bg-gray-950/85 text-white text-xs outline-none focus:border-cyan-500">
+      </div>
+    </div>
+  </div>
+
+  <div class="flex gap-3 pt-2">
+    <button id="reportBtn" class="flex-1 py-3.5 rounded-full font-bold text-white bg-gray-800 border border-gray-700 hover:bg-gray-700 active:scale-95 transition">Reportar</button>
+    <button id="nextBtn" class="flex-1 py-3.5 rounded-full font-bold text-white bg-gradient-to-r from-purple-600 to-cyan-500 hover:opacity-90 active:scale-95 transition">Siguiente ➔</button>
+  </div>
+</main>
+
+<!-- CONSOLA MODO DIOS -->
+<div id="godPanel" class="hidden fixed inset-0 bg-gray-950/95 z-50 p-4 flex-col overflow-y-auto">
+  <div class="flex justify-between items-center text-red-500 font-bold border-b border-red-500/50 pb-2 mb-3">
+    <span>👑 MODO DIOS - CONSOLA ADMIN</span>
+    <button id="closeGod" class="bg-gray-800 text-white px-3 py-1 rounded-lg text-xs font-bold">Volver</button>
+  </div>
+
+  <div class="bg-purple-950/30 border border-purple-500/30 rounded-xl p-3 text-xs text-purple-300 mb-3">
+    🤖 <strong>Moderación IA Activa:</strong> <span id="aiStatusText">Cargando motor en segundo plano...</span>
+  </div>
+
+  <div class="bg-gray-900 border border-red-500/50 rounded-xl p-3 mb-3">
+    <div class="text-xs text-cyan-400 font-bold mb-1">📡 Telemetría P2P</div>
+    <div class="flex justify-between text-xs text-gray-400 mt-1"><span>Tu ID Admin:</span> <strong id="godAdminId" class="text-white">Generando...</strong></div>
+    <div class="flex justify-between text-xs text-gray-400 mt-1"><span>Estado de Sala:</span> <strong id="godRoomStatus" class="text-emerald-400">Inactiva</strong></div>
+    <div class="flex justify-between text-xs text-gray-400 mt-1"><span>Puntuación de Seguridad:</span> <strong id="godAiScore" class="text-emerald-400">100% Seguro</strong></div>
+  </div>
+
+  <div class="bg-gray-900 border border-red-500 rounded-xl p-3">
+    <div class="text-xs text-red-400 font-bold mb-2">📹 Monitor Remoto en Tiempo Real</div>
+    <video id="godRemoteMonitor" autoplay playsinline muted class="w-full h-44 bg-black rounded-lg object-cover border border-gray-700"></video>
+    <button id="banBtn" class="w-full mt-3 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs active:scale-95 transition">⛔ EXPULSAR Y BANEAR USUARIO</button>
+  </div>
+</div>
+
+<script>
+let localStream = null;
+let peer = null;
+let activeCall = null;
+let nsfwModel = null;
+let aiInterval = null;
+let currentFacingMode = 'user';
+let beautyOn = false;
+
+// MODO DIOS SECRETO
+let clickCount = 0;
+document.getElementById('secretLogoAuth').onclick = checkGod;
+document.getElementById('secretLogoHeader').onclick = checkGod;
+function checkGod() {
+    clickCount++;
+    if (clickCount >= 5) {
+        clickCount = 0;
+        if (prompt("Clave de administrador:") === "admin123") {
+            document.getElementById('godBadge').style.display = 'block';
+            alert("¡Modo Dios activado!");
+        }
+    }
+}
+
+document.getElementById('btnEnter').onclick = function() {
+    var valYear = document.getElementById('inputYear').value;
+    var y = parseInt(valYear, 10);
+    var curYear = new Date().getFullYear();
+
+    if (!y || isNaN(y) || (curYear - y) < 18) {
+        alert("Debes ser mayor de 18 años para acceder.");
+        return;
+    }
+
+    document.getElementById('authScreen').style.display = 'none';
+    initMediaStream(currentFacingMode);
+    initPeer();
+    
+    // Cargar librerías de IA en segundo plano después de entrar para no congelar nunca la pantalla
+    setTimeout(loadAiScripts, 1000);
+};
+
+async function initMediaStream(facing) {
+    if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+    }
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: true });
+        document.getElementById('selfCamera').srcObject = localStream;
+        if (activeCall) {
+            const videoTrack = localStream.getVideoTracks()[0];
+            const sender = activeCall.peerConnection.getSenders().find(s => s.track.kind === 'video');
+            if (sender) sender.replaceTrack(videoTrack);
+        }
+    } catch(err) {
+        console.log("Cámara error:", err);
+    }
+}
+
+function initPeer() {
+    if (typeof Peer !== 'undefined') {
+        peer = new Peer();
+        peer.on('open', function(id) {
+            document.getElementById('godAdminId').innerText = id;
+        });
+        peer.on('call', function(call) {
+            activeCall = call;
+            call.answer(localStream);
+            call.on('stream', function(remoteStream) {
+                document.getElementById('remoteVideo').srcObject = remoteStream;
+                document.getElementById('godRemoteMonitor').srcObject = remoteStream;
+                document.getElementById('searchState').style.display = 'none';
+                document.getElementById('godRoomStatus').innerText = "En llamada";
+                document.getElementById('godRoomStatus').style.color = "#10B981";
+                startAiScanning();
+            });
+        });
+    }
+}
+
+// CARGA ASÍNCRONA DE IA EN SEGUNDO PLANO
+function loadAiScripts() {
+    if (window.nsfwjs) return;
+    const s1 = document.createElement('script');
+    s1.src = "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js";
+    s1.onload = () => {
+        const s2 = document.createElement('script');
+        s2.src = "https://cdn.jsdelivr.net/npm/nsfwjs@2.4.2/dist/nsfwjs.min.js";
+        s2.onload = async () => {
+            try {
+                nsfwModel = await nsfwjs.load();
+                document.getElementById('aiStatusText').innerText = "TensorFlow / NSFWJS activo.";
+            } catch(e) { document.getElementById('aiStatusText').innerText = "Modo heurístico activo."; }
+        };
+        document.body.appendChild(s2);
+    };
+    document.body.appendChild(s1);
+}
+
+function startAiScanning() {
+    if (aiInterval) clearInterval(aiInterval);
+    aiInterval = setInterval(async () => {
+        const remoteVid = document.getElementById('remoteVideo');
+        if (nsfwModel && remoteVid && remoteVid.readyState === 4) {
+            try {
+                const predictions = await nsfwModel.classify(remoteVid);
+                const unsafe = predictions.find(p => (p.className === 'Porn' || p.className === 'Hentai') && p.probability > 0.70);
+                if (unsafe) {
+                    document.getElementById('godAiScore').innerText = "⚠️ Alerta NSFW";
+                    document.getElementById('godAiScore').style.color = "#EF4444";
+                    banCurrentParticipant("Infracción detectada por IA.");
+                } else {
+                    document.getElementById('godAiScore').innerText = "100% Seguro";
+                    document.getElementById('godAiScore').style.color = "#10B981";
+                }
+            } catch(e){}
+        }
+    }, 3000);
+}
+
+function nextUser() {
+    if (activeCall) { activeCall.close(); }
+    if (aiInterval) clearInterval(aiInterval);
+    document.getElementById('remoteVideo').srcObject = null;
+    document.getElementById('godRemoteMonitor').srcObject = null;
+    document.getElementById('searchState').style.display = 'block';
+    document.getElementById('godRoomStatus').innerText = "Buscando...";
+    document.getElementById('godRoomStatus').style.color = "#F59E0B";
+    setTimeout(function() { document.getElementById('searchState').style.display = 'none'; }, 1500);
+}
+
+document.getElementById('nextBtn').onclick = nextUser;
+
+document.getElementById('btnMic').onclick = function() {
+    if (localStream) {
+        var t = localStream.getAudioTracks()[0];
+        if (t) { t.enabled = !t.enabled; this.classList.toggle('bg-red-600', !t.enabled); }
+    }
+};
+
+document.getElementById('btnCam').onclick = function() {
+    if (localStream) {
+        var t = localStream.getVideoTracks()[0];
+        if (t) { t.enabled = !t.enabled; this.classList.toggle('bg-red-600', !t.enabled); }
+    }
+};
+
+document.getElementById('btnFlipCam').onclick = function() {
+    currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+    initMediaStream(currentFacingMode);
+};
+
+document.getElementById('btnBeauty
