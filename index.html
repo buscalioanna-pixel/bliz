@@ -10,11 +10,12 @@
         input { width: 80%; padding: 12px; margin: 10px 0; background: #0f1020; border: 1px solid #444; color: #fff; border-radius: 8px; text-align: center; font-size: 16px; }
         button { width: 100%; padding: 12px; margin-top: 10px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; }
         button:active { opacity: 0.8; }
-        #chatScreen { display: none; text-align: center; }
-        .video-container { position: relative; width: 100%; height: 320px; background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 12px; border: 1px solid #444; }
+        #chatScreen, #adminScreen { display: none; text-align: center; }
+        .video-container { position: relative; width: 100%; height: 260px; background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 10px; border: 1px solid #444; }
         video { width: 100%; height: 100%; object-fit: cover; }
         .controls { display: flex; gap: 10px; margin-top: 10px; }
         .controls button { margin-top: 0; background: #2a2a40; border: 1px solid #555; }
+        .admin-link { margin-top: 15px; font-size: 12px; color: #888; cursor: pointer; text-decoration: underline; display: inline-block; }
     </style>
 </head>
 <body>
@@ -24,6 +25,8 @@
         <p style="color: #aaa; font-size: 14px;">Introduce tu año de nacimiento (+18)</p>
         <input type="number" id="ageInput" placeholder="Ej. 2000">
         <button onclick="verificarEdad()">Entrar al Chat</button>
+        <br>
+        <span class="admin-link" onclick="abrirAdmin()">Acceso Moderador</span>
     </div>
 
     <!-- Pantalla de Videochat en Directo -->
@@ -37,6 +40,19 @@
             <button onclick="toggleAudio()" id="audioBtn">Silenciar</button>
             <button onclick="toggleVideo()" id="videoBtn">Apagar Cam</button>
         </div>
+        <button onclick="salirChat()" style="background: #444; margin-top: 10px; font-size: 13px; padding: 8px;">Salir</button>
+    </div>
+
+    <!-- Pantalla de Administración (God Mode) -->
+    <div class="card" id="adminScreen">
+        <h3 style="color: #ef4444;">🛡️ Panel de Moderación</h3>
+        <p style="font-size: 13px; color: #aaa;">Control de usuarios activos y baneos en tiempo real.</p>
+        <div style="background: #0f1020; padding: 15px; border-radius: 8px; margin: 15px 0; font-size: 14px; text-align: left;">
+            <p>• Usuarios conectados: <span id="onlineCount" style="color: #3b82f6; font-weight: bold;">1</span></p>
+            <p>• Estado del Servidor: <span style="color: #10b981; font-weight: bold;">Activo</span></p>
+        </div>
+        <button onclick="alert('Señal de reinicio global enviada.')" style="background: #ef4444;">Reiniciar Conexiones</button>
+        <button onclick="cerrarAdmin()" style="background: #444;">Volver al Inicio</button>
     </div>
 
     <script>
@@ -84,6 +100,28 @@
                 videoTrack.enabled = !videoTrack.enabled;
                 document.getElementById('videoBtn').innerText = videoTrack.enabled ? 'Apagar Cam' : 'Encender Cam';
             }
+        }
+
+        function salirChat() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            }
+            location.reload();
+        }
+
+        function abrirAdmin() {
+            const pass = prompt("Introduce la contraseña de moderador:");
+            if (pass === "admin123") {
+                document.getElementById('ageScreen').style.display = 'none';
+                document.getElementById('adminScreen').style.display = 'block';
+            } else if (pass !== null) {
+                alert("Contraseña incorrecta.");
+            }
+        }
+
+        function cerrarAdmin() {
+            document.getElementById('adminScreen').style.display = 'none';
+            document.getElementById('ageScreen').style.display = 'block';
         }
     </script>
 </body>
