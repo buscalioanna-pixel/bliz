@@ -31,11 +31,11 @@ cursor: pointer;
 .auth-sub { font-size: 12px; color: #9CA3AF; }
 
 .date-container { display: flex; gap: 6px; justify-content: center; }
-.date-select {
-padding: 10px 4px; border-radius: 10px; border: 1px solid #374151;
-background: #0B0F19; color: white; font-size: 13px; outline: none; text-align: center;
+.date-input {
+padding: 12px 4px; border-radius: 10px; border: 1px solid #374151;
+background: #0B0F19; color: white; font-size: 15px; outline: none; text-align: center;
 }
-.day { width: 25%; } .month { width: 45%; } .year { width: 30%; }
+.day { width: 28%; } .month { width: 32%; } .year { width: 40%; }
 
 .btn-auth {
 padding: 14px; border-radius: 25px; border: none; font-weight: bold; cursor: pointer;
@@ -153,24 +153,156 @@ animation: floatUp 1.8s ease-out forwards; z-index: 15; pointer-events: none;
 <div id="authScreen">
 <div class="auth-card">
 <div class="auth-title" id="secretLogoTrigger">⚡ BLIZ</div>
-<p class="auth-sub">Selecciona tu fecha de nacimiento (+18)</p>
+<p class="auth-sub">Introduce tu fecha de nacimiento (+18)</p>
 
 <div class="date-container">
-<select id="selectDay" class="date-select day">
-<option value="">Día</option>
-<option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option>
-<option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option>
-<option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option>
-</select>
+<input type="text" id="inputDay" class="date-input day" placeholder="Día" maxlength="2" inputmode="numeric">
+<input type="text" id="inputMonth" class="date-input month" placeholder="Mes" maxlength="2" inputmode="numeric">
+<input type="text" id="inputYear" class="date-input year" placeholder="Año" maxlength="4" inputmode="numeric">
+</div>
 
-<select id="selectMonth" class="date-select month">
-<option value="">Mes</option>
-<option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
-<option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
-<option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
-<option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
-</select>
+<button class="btn-auth" id="btnEnter">Entrar</button>
 
-<select id="selectYear" class="date-select year">
-<option value="">Año</option>
-<option value="2006">2006</option><option value="2005">2005</option><option value="2004">2004</option><option value="2003">2003</option><option value="2002">
+<p class="terms-text">Al entrar confirmas que eres mayor de edad y aceptas el uso de la cámara para el videochat.</p>
+<div class="legal-links">
+<span onclick="alert('Bliz es una plataforma de comunicación P2P. Prohibido menores de 18 años y contenido inapropiado.')">Términos</span>
+<span onclick="alert('No almacenamos grabaciones de video en servidores externos. Las transmisiones son cifradas de extremo a extremo.')">Privacidad</span>
+</div>
+</div>
+</div>
+
+<!-- CABECERA -->
+<header>
+<div class="logo" id="headerLogoTrigger">⚡ BLIZ</div>
+<div class="god-badge" id="godBtn">👑 MODO DIOS</div>
+</header>
+
+<!-- BARRA DE FILTROS -->
+<div class="filter-bar">
+<div class="filter-group">
+<span class="filter-label">🌐 País:</span>
+<select id="countrySelect" class="filter-select">
+<option value="GLOBAL">🌍 Todos los países</option>
+<option value="ES">🇪🇸 España</option>
+<option value="MX">🇲🇽 México</option>
+<option value="CO">🇨🇴 Colombia</option>
+<option value="AR">🇦🇷 Argentina</option>
+<option value="US">🇺🇸 Estados Unidos</option>
+</select>
+</div>
+
+<div class="filter-group">
+<span class="filter-label">👤 Buscar:</span>
+<select id="genderSelect" class="filter-select">
+<option value="ALL">👫 Todos</option>
+<option value="FEMALE">👩 Mujeres</option>
+<option value="MALE">👨 Hombres</option>
+</select>
+</div>
+</div>
+
+<!-- PANTALLA PRINCIPAL -->
+<div class="main-container" id="swipeArea">
+<div class="video-container">
+<video id="remoteVideo" autoplay playsinline></video>
+
+<div class="cam-controls">
+<div class="icon-btn" id="btnMic">🎤</div>
+<div class="icon-btn" id="btnCam">📹</div>
+<div class="icon-btn" id="btnBeauty" title="Filtro belleza">✨</div>
+</div>
+
+<div id="searchState">
+<span style="font-size:36px;">🔍</span>
+<p id="searchText" style="margin-top:6px; font-size:13px;">Buscando usuario P2P...</p>
+<p style="font-size:10px; color:#6B7280; margin-top:4px;">Desliza 👈 👉 para saltar</p>
+</div>
+
+<video id="selfCamera" autoplay playsinline muted></video>
+
+<div class="chat-overlay">
+<div class="chat-messages" id="chatMsgs">
+<div class="chat-msg">
+<strong>Sistema (Bliz)</strong>: Conectado a la red P2P segura.
+<span class="translated">🌐 Estado: Listo para emparejar.</span>
+</div>
+</div>
+
+<div class="emoji-bar">
+<span class="emoji-btn" onclick="sendEmoji('❤️')">❤️</span>
+<span class="emoji-btn" onclick="sendEmoji('😂')">😂</span>
+<span class="emoji-btn" onclick="sendEmoji('🔥')">🔥</span>
+<span class="emoji-btn" onclick="sendEmoji('👋')">👋</span>
+</div>
+
+<div class="chat-input-box">
+<input type="text" id="chatInput" class="chat-input" placeholder="Escribe un mensaje..." autocomplete="off">
+</div>
+</div>
+</div>
+
+<div class="controls">
+<button class="btn btn-skip" id="reportBtn">Reportar</button>
+<button class="btn btn-next" id="nextBtn">Siguiente ➔</button>
+</div>
+
+<div id="godPanel">
+<div class="god-header">
+<span>👑 MODERACIÓN IA</span>
+<button id="closeGod">Cerrar</button>
+</div>
+<div class="ai-box">🤖 IA activa: Analizando fotogramas en tiempo real.</div>
+<div class="feed-card" id="card1">
+<div style="font-size:11px; color:#EF4444; font-weight:bold;">⚠️ Alerta IA (Sala #104)</div>
+<p style="font-size:12px; color:#ccc; margin-top:4px;">Infracción sospechosa detectada.</p>
+<button class="btn-ban" id="banBtn">⛔ BANEAR</button>
+</div>
+</div>
+</div>
+
+<script>
+let esModerador = false;
+let beautyOn = false;
+let localStream = null;
+
+let clickCount = 0;
+function activarModoDiosSecreto() {
+    clickCount++;
+    if (clickCount >= 5) {
+        clickCount = 0;
+        const clave = prompt("Introduce la clave de administrador:");
+        if (clave === "admin123") {
+            esModerador = true;
+            document.getElementById('godBtn').style.display = 'block';
+            alert("¡Modo Dios activado con éxito!");
+        } else if (clave !== null) {
+            alert("Clave incorrecta.");
+        }
+    }
+}
+
+document.getElementById('secretLogoTrigger').onclick = activarModoDiosSecreto;
+document.getElementById('headerLogoTrigger').onclick = activarModoDiosSecreto;
+
+async function iniciar() {
+    const d = document.getElementById('inputDay').value.trim();
+    const m = document.getElementById('inputMonth').value.trim();
+    const y = document.getElementById('inputYear').value.trim();
+
+    if (!d || !m || !y) {
+        alert("Por favor escribe tu día, mes y año de nacimiento.");
+        return;
+    }
+
+    const nacimiento = new Date(y, m - 1, d);
+    const hoy = new Date();
+    let edad = hoy.getFullYear() - nacimiento.getFullYear();
+    const mesActual = hoy.getMonth() - nacimiento.getMonth();
+    if (mesActual < 0 || (mesActual === 0 && hoy.getDate() < nacimiento.getDate())) { edad--; }
+
+    if (isNaN(edad) || edad < 18) {
+        alert("Acceso denegado: Debes ser mayor de 18 años.");
+        return;
+    }
+
+    document.getElementById('authScreen').style.display = 'none';
