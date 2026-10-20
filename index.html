@@ -6,52 +6,84 @@
     <title>Bliz - Videochat</title>
     <style>
         body { background: #0f1020; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: #1a1a2e; padding: 25px; border-radius: 12px; text-align: center; width: 90%; max-width: 350px; border: 1px solid #333; }
+        .card { background: #1a1a2e; padding: 25px; border-radius: 16px; text-align: center; width: 90%; max-width: 380px; border: 1px solid #333; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
         input { width: 80%; padding: 12px; margin: 10px 0; background: #0f1020; border: 1px solid #444; color: #fff; border-radius: 8px; text-align: center; font-size: 16px; }
-        button { width: 100%; padding: 12px; margin-top: 10px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        button { width: 100%; padding: 12px; margin-top: 10px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; }
+        button:active { opacity: 0.8; }
         #chatScreen { display: none; text-align: center; }
-        video { width: 100%; max-height: 300px; background: #000; border-radius: 8px; margin-bottom: 10px; }
+        .video-container { position: relative; width: 100%; height: 320px; background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 12px; border: 1px solid #444; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        .controls { display: flex; gap: 10px; margin-top: 10px; }
+        .controls button { margin-top: 0; background: #2a2a40; border: 1px solid #555; }
     </style>
 </head>
 <body>
-    <!-- Pantalla de Verificación -->
+    <!-- Pantalla de Verificación de Edad -->
     <div class="card" id="ageScreen">
-        <h2>BLIZ</h2>
-        <p>Introduce tu año de nacimiento (+18)</p>
+        <h2>⚡ BLIZ</h2>
+        <p style="color: #aaa; font-size: 14px;">Introduce tu año de nacimiento (+18)</p>
         <input type="number" id="ageInput" placeholder="Ej. 2000">
-        <button onclick="verificarEdad()">Entrar</button>
+        <button onclick="verificarEdad()">Entrar al Chat</button>
     </div>
 
-    <!-- Pantalla de Videochat -->
+    <!-- Pantalla de Videochat en Directo -->
     <div class="card" id="chatScreen">
-        <h2>BLIZ - Sala en Directo</h2>
-        <video id="localVideo" autoplay playsinline muted></video>
-        <button onclick="siguienteUsuario()" style="background: #ef4444;">Siguiente</button>
+        <h3 style="margin-top: 0; color: #3b82f6;">BLIZ - En Directo</h3>
+        <div class="video-container">
+            <video id="localVideo" autoplay playsinline muted></video>
+        </div>
+        <button onclick="siguienteUsuario()" style="background: #ef4444;">Siguiente / Buscar</button>
+        <div class="controls">
+            <button onclick="toggleAudio()" id="audioBtn">Silenciar</button>
+            <button onclick="toggleVideo()" id="videoBtn">Apagar Cam</button>
+        </div>
     </div>
 
     <script>
+        let localStream = null;
+
         function verificarEdad() {
             const anio = document.getElementById('ageInput').value;
-            if (2026 - anio >= 18) {
+            const currentYear = new Date().getFullYear();
+            if (currentYear - anio >= 18) {
                 document.getElementById('ageScreen').style.display = 'none';
                 document.getElementById('chatScreen').style.display = 'block';
                 iniciarCamara();
             } else {
-                alert('Debes ser mayor de edad para acceder.');
+                alert('Debes ser mayor de edad para acceder a Bliz.');
             }
         }
 
         async function iniciarCamara() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                document.getElementById('localVideo').srcObject = stream;
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                document.getElementById('localVideo').srcObject = localStream;
             } catch (err) {
                 console.error("Error al acceder a la cámara:", err);
+                alert("No se pudo acceder a la cámara o el micrófono. Revisa los permisos.");
             }
         }
 
         function siguienteUsuario() {
-            alert('Buscando siguiente usuario...');
+            alert('Buscando nuevo usuario en línea...');
+        }
+
+        function toggleAudio() {
+            if (!localStream) return;
+            const audioTrack = localStream.getAudioTracks()[0];
+            if (audioTrack) {
+                audioTrack.enabled = !audioTrack.enabled;
+                document.getElementById('audioBtn').innerText = audioTrack.enabled ? 'Silenciar' : 'Activar Audio';
+            }
+        }
+
+        function toggleVideo() {
+            if (!localStream) return;
+            const videoTrack = localStream.getVideoTracks()[0];
+            if (videoTrack) {
+                videoTrack.enabled = !videoTrack.enabled;
+                document.getElementById('videoBtn').innerText = videoTrack.enabled ? 'Apagar Cam' : 'Encender Cam';
+            }
         }
     </script>
 </body>
