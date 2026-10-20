@@ -285,24 +285,110 @@ document.getElementById('secretLogoTrigger').onclick = activarModoDiosSecreto;
 document.getElementById('headerLogoTrigger').onclick = activarModoDiosSecreto;
 
 async function iniciar() {
-    const d = document.getElementById('inputDay').value.trim();
-    const m = document.getElementById('inputMonth').value.trim();
-    const y = document.getElementById('inputYear').value.trim();
+    const y = parseInt(document.getElementById('inputYear').value.trim());
 
-    if (!d || !m || !y) {
-        alert("Por favor escribe tu día, mes y año de nacimiento.");
+    if (!y || isNaN(y)) {
+        alert("Por favor introduce un año válido.");
         return;
     }
 
-    const nacimiento = new Date(y, m - 1, d);
-    const hoy = new Date();
-    let edad = hoy.getFullYear() - nacimiento.getFullYear();
-    const mesActual = hoy.getMonth() - nacimiento.getMonth();
-    if (mesActual < 0 || (mesActual === 0 && hoy.getDate() < nacimiento.getDate())) { edad--; }
+    const anioActual = new Date().getFullYear();
+    const edad = anioActual - y;
 
-    if (isNaN(edad) || edad < 18) {
+    if (edad < 18) {
         alert("Acceso denegado: Debes ser mayor de 18 años.");
         return;
     }
 
+    // Ocultar pantalla de acceso inmediatamente
     document.getElementById('authScreen').style.display = 'none';
+
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
+        document.getElementById('selfCamera').srcObject = localStream;
+
+        setTimeout(() => {
+            document.getElementById('searchState').style.display = 'none';
+        }, 2000);
+
+    } catch (err) {
+        console.log("Error al acceder a la cámara:", err);
+        alert("No se pudo acceder a la cámara o micrófono. Revisa los permisos.");
+    }
+}
+
+document.getElementById('btnEnter').onclick = iniciar;
+
+document.getElementById('btnMic').onclick = function() {
+    if (localStream) {
+        const audioTrack = localStream.getAudioTracks()[0];
+        audioTrack.enabled = !audioTrack.enabled;
+        this.classList.toggle('active', !audioTrack.enabled);
+    }
+};
+
+document.getElementById('btnCam').onclick = function() {
+    if (localStream) {
+        const videoTrack = localStream.getVideoTracks()[0];
+        videoTrack.enabled = !videoTrack.enabled;
+        this.classList.toggle('active', !videoTrack.enabled);
+    }
+};
+
+document.getElementById('btnBeauty').onclick = function() {
+    beautyOn = !beautyOn;
+    document.getElementById('selfCamera').classList.toggle('beauty-active', beautyOn);
+    this.style.background = beautyOn ? '#8B5CF6' : 'rgba(17, 24, 39, 0.75)';
+};
+
+function sendEmoji(emoji) {
+    const el = document.createElement('div');
+    el.className = 'floating-emoji';
+    el.innerText = emoji;
+    document.querySelector('.video-container').appendChild(el);
+    setTimeout(() => el.remove(), 1800);
+}
+
+document.getElementById('chatInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && this.value.trim() !== '') {
+        const box = document.getElementById('chatMsgs');
+        const msg = document.createElement('div');
+        msg.className = 'chat-msg';
+        msg.innerHTML = `<strong>Tú</strong>: ${this.value} <span class="translated">🌐 Traducido (Auto)</span>`;
+        box.appendChild(msg);
+        box.scrollTop = box.scrollHeight;
+        this.value = '';
+    }
+});
+
+let touchStartX = 0;
+const swipeArea = document.getElementById('swipeArea');
+
+swipeArea.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; });
+swipeArea.addEventListener('touchend', e => {
+    let touchEndX = e.changedTouches[0].screenX;
+    if (Math.abs(touchStartX - touchEndX) > 50) {
+        siguienteUsuario();
+    }
+});
+
+function siguienteUsuario() {
+    let state = document.getElementById('searchState');
+    state.style.display = 'block';
+    state.style.opacity = '0.2';
+    setTimeout(() => {
+        state.style.opacity = '1';
+        setTimeout(() => { state.style.display = 'none'; }, 1000);
+    }, 500);
+}
+
+document.getElementById('nextBtn').onclick = siguienteUsuario;
+document.getElementById('godBtn').onclick = () => { document.getElementById('godPanel').style.display = 'flex'; };
+document.getElementById('closeGod').onclick = () => { document.getElementById('godPanel').style.display = 'none'; };
+document.getElementById('banBtn').onclick = () => {
+    document.getElementById('card1').innerHTML = "<p style='color:#EF4444; text-align:center; padding:10px; font-weight:bold;'>USUARIO BANEADO</p>";
+};
+document.getElementById('reportBtn').onclick = () => { alert("Reporte enviado a la IA."); };
+</script>
+</body>
+</html>
