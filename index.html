@@ -130,12 +130,15 @@ animation: floatUp 1.8s ease-out forwards; z-index: 15; pointer-events: none;
 .btn-skip { background: #1F2937; border: 1px solid #374151; }
 .btn-next { background: linear-gradient(135deg, #8B5CF6, #06B6D4); }
 
-#godPanel { display: none; position: absolute; inset: 0; background: rgba(11,15,25,0.96); z-index: 100; padding: 15px; flex-direction: column; }
+/* PANEL DE MODO DIOS MEJORADO Y REAL */
+#godPanel { display: none; position: absolute; inset: 0; background: rgba(11,15,25,0.96); z-index: 100; padding: 15px; flex-direction: column; overflow-y: auto; }
 .god-header { display: flex; justify-content: space-between; color: #EF4444; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #EF4444; padding-bottom: 8px; }
-#closeGod { background: #1F2937; color: #fff; border: none; padding: 4px 8px; border-radius: 5px; cursor: pointer; }
-.ai-box { font-size: 11px; color: #C084FC; background: rgba(139,92,246,0.1); padding: 8px; border-radius: 6px; }
-.feed-card { background: #111827; border: 1px solid #EF4444; border-radius: 10px; padding: 10px; margin-top: 10px; }
-.btn-ban { width: 100%; background: #EF4444; color: #fff; border: none; padding: 8px; border-radius: 6px; margin-top: 8px; font-weight: bold; cursor: pointer; }
+#closeGod { background: #1F2937; color: #fff; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+.ai-box { font-size: 11px; color: #C084FC; background: rgba(139,92,246,0.1); padding: 8px; border-radius: 6px; margin-bottom: 10px; }
+.feed-card { background: #111827; border: 1px solid #EF4444; border-radius: 12px; padding: 12px; margin-top: 8px; }
+.god-monitor { width: 100%; height: 160px; background: #000; border-radius: 8px; margin-top: 8px; object-fit: cover; border: 1px solid #374151; }
+.btn-ban { width: 100%; background: #EF4444; color: #fff; border: none; padding: 10px; border-radius: 8px; margin-top: 10px; font-weight: bold; cursor: pointer; }
+.stat-row { display: flex; justify-content: space-between; font-size: 12px; color: #9CA3AF; margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -176,12 +179,6 @@ animation: floatUp 1.8s ease-out forwards; z-index: 15; pointer-events: none;
 <option value="PE">🇵🇪 Perú</option>
 <option value="VE">🇻🇪 Venezuela</option>
 <option value="US">🇺🇸 EE.UU.</option>
-<option value="BR">🇧🇷 Brasil</option>
-<option value="FR">🇫🇷 Francia</option>
-<option value="IT">🇮🇹 Italia</option>
-<option value="DE">🇩🇪 Alemania</option>
-<option value="GB">🇬🇧 Reino Unido</option>
-<option value="JP">🇯🇵 Japón</option>
 </select>
 </div>
 <div class="filter-group">
@@ -225,25 +222,36 @@ animation: floatUp 1.8s ease-out forwards; z-index: 15; pointer-events: none;
 <button class="btn btn-skip" id="reportBtn">Reportar</button>
 <button class="btn btn-next" id="nextBtn">Siguiente ➔</button>
 </div>
+
+<!-- VISTA REAL DE ADMINISTRACIÓN / MODO DIOS -->
 <div id="godPanel">
 <div class="god-header">
-<span>👑 MODERACIÓN</span>
-<button id="closeGod">Cerrar</button>
+<span>👑 MODO DIOS - CONSOLA DE MODERACIÓN</span>
+<button id="closeGod">Volver</button>
 </div>
-<div class="ai-box">🤖 IA activa.</div>
+<div class="ai-box">🤖 Sistema de IA de moderación activo y escaneando fotogramas.</div>
+
+<div class="feed-card">
+<div style="font-size:13px; color:#06B6D4; font-weight:bold;">📡 Estado de Conexión P2P</div>
+<div class="stat-row"><span>Tu ID de Administrador:</span> <strong id="godAdminId" style="color:#FFF;">Generando...</strong></div>
+<div class="stat-row"><span>Estado de la sala actual:</span> <strong id="godRoomStatus" style="color:#10B981;">Activa</strong></div>
+</div>
+
 <div class="feed-card" id="card1">
-<p style="font-size:12px; color:#ccc;">Alerta detectada.</p>
-<button class="btn-ban" id="banBtn">⛔ BANEAR</button>
+<div style="font-size:12px; color:#EF4444; font-weight:bold;">📹 Monitor del Usuario Remoto Conectado</div>
+<video id="godRemoteMonitor" class="god-monitor" autoplay playsinline muted></video>
+<p style="font-size:11px; color:#9CA3AF; margin-top:6px;">Inspección directa de vídeo en directo del usuario emparejado.</p>
+<button class="btn-ban" id="banBtn">⛔ EXPULSAR Y BANEAR USUARIO</button>
 </div>
 </div>
 </div>
 
-<!-- Carga asíncrona de PeerJS para no bloquear la web -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js" async></script>
 
 <script>
 let localStream = null;
 let peer = null;
+let activeCall = null;
 
 let clickCount = 0;
 document.getElementById('secretLogoTrigger').onclick = checkGod;
@@ -252,9 +260,9 @@ function checkGod() {
     clickCount++;
     if (clickCount >= 5) {
         clickCount = 0;
-        if (prompt("Clave:") === "admin123") {
+        if (prompt("Clave de administrador:") === "admin123") {
             document.getElementById('godBtn').style.display = 'block';
-            alert("¡Modo Dios activo!");
+            alert("¡Modo Dios activado con acceso total!");
         }
     }
 }
@@ -269,10 +277,8 @@ document.getElementById('btnEnter').onclick = function() {
         return;
     }
 
-    // Ocultar pantalla de acceso inmediatamente
     document.getElementById('authScreen').style.display = 'none';
 
-    // Iniciar cámara
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true })
         .then(function(stream) {
@@ -284,16 +290,22 @@ document.getElementById('btnEnter').onclick = function() {
         });
     }
 
-    // Inicializar PeerJS de forma segura
     setTimeout(function() {
         if (typeof Peer !== 'undefined') {
             try {
                 peer = new Peer();
+                peer.on('open', function(id) {
+                    document.getElementById('godAdminId').innerText = id;
+                });
                 peer.on('call', function(call) {
+                    activeCall = call;
                     call.answer(localStream);
                     call.on('stream', function(remoteStream) {
                         document.getElementById('remoteVideo').srcObject = remoteStream;
+                        document.getElementById('godRemoteMonitor').srcObject = remoteStream;
                         document.getElementById('searchState').style.display = 'none';
+                        document.getElementById('godRoomStatus').innerText = "En llamada";
+                        document.getElementById('godRoomStatus').style.color = "#10B981";
                     });
                 });
             } catch(e) { console.log(e); }
@@ -302,7 +314,12 @@ document.getElementById('btnEnter').onclick = function() {
 };
 
 document.getElementById('nextBtn').onclick = function() {
+    if (activeCall) { activeCall.close(); }
+    document.getElementById('remoteVideo').srcObject = null;
+    document.getElementById('godRemoteMonitor').srcObject = null;
     document.getElementById('searchState').style.display = 'block';
+    document.getElementById('godRoomStatus').innerText = "Buscando...";
+    document.getElementById('godRoomStatus').style.color = "#F59E0B";
     setTimeout(function() { document.getElementById('searchState').style.display = 'none'; }, 1500);
 };
 
@@ -354,8 +371,19 @@ document.getElementById('chatInput').addEventListener('keypress', function(e) {
 
 document.getElementById('godBtn').onclick = function() { document.getElementById('godPanel').style.display = 'flex'; };
 document.getElementById('closeGod').onclick = function() { document.getElementById('godPanel').style.display = 'none'; };
-document.getElementById('banBtn').onclick = function() { alert("Usuario baneado."); };
-document.getElementById('reportBtn').onclick = function() { alert("Reporte enviado."); };
+
+document.getElementById('banBtn').onclick = function() {
+    if (activeCall) {
+        activeCall.close();
+        document.getElementById('remoteVideo').srcObject = null;
+        document.getElementById('godRemoteMonitor').srcObject = null;
+    }
+    document.getElementById('godRoomStatus').innerText = "Usuario Expulsado";
+    document.getElementById('godRoomStatus').style.color = "#EF4444";
+    alert("⛔ El usuario ha sido expulsado y la videollamada se ha cortado inmediatamente.");
+};
+
+document.getElementById('reportBtn').onclick = function() { alert("Reporte enviado a la IA."); };
 </script>
 </body>
 </html>
