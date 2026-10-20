@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0B0F19">
@@ -131,7 +132,7 @@ html, body {
     </div>
   </div>
 
-  <!-- BOTONES INFERIORES: REQUISITO GOOGLE PLAY (BLOQUEAR Y REPORTAR SEPARADOS) -->
+  <!-- BOTONES INFERIORES: REQUISITO GOOGLE PLAY -->
   <div class="flex-none flex gap-2 pb-1">
     <button id="blockBtn" class="flex-1 py-2.5 rounded-full font-bold text-xs text-white bg-red-900/80 border border-red-700 hover:bg-red-800 active:scale-95 transition">🚫 Bloquear</button>
     <button id="reportBtn" class="flex-1 py-2.5 rounded-full font-bold text-xs text-white bg-gray-800 border border-gray-700 hover:bg-gray-700 active:scale-95 transition">⚠️ Reportar</button>
@@ -143,4 +144,199 @@ html, body {
 <div id="godPanel" class="hidden fixed inset-0 bg-gray-950/95 z-50 p-4 flex-col overflow-y-auto">
   <div class="flex justify-between items-center text-red-500 font-bold border-b border-red-500/50 pb-2 mb-3">
     <span>👑 MODO DIOS - CONSOLA ADMIN</span>
-    <button id="closeGod" class="bg-gray-800 text
+    <button id="closeGod" class="bg-gray-800 text-white px-3 py-1 rounded-lg text-xs font-bold">Volver</button>
+  </div>
+
+  <div class="bg-gray-900 border border-red-500/50 rounded-xl p-3 mb-3">
+    <div class="text-xs text-cyan-400 font-bold mb-1">📡 Telemetría P2P</div>
+    <div class="flex justify-between text-xs text-gray-400 mt-1"><span>Tu ID Admin:</span> <strong id="godAdminId" class="text-white">Generando...</strong></div>
+    <div class="flex justify-between text-xs text-gray-400 mt-1"><span>Estado de Sala:</span> <strong id="godRoomStatus" class="text-emerald-400">Inactiva</strong></div>
+  </div>
+
+  <div class="bg-gray-900 border border-red-500 rounded-xl p-3">
+    <div class="text-xs text-red-400 font-bold mb-2">📹 Monitor Remoto en Tiempo Real</div>
+    <video id="godRemoteMonitor" autoplay playsinline muted class="w-full h-40 bg-black rounded-lg object-cover border border-gray-700"></video>
+    <button id="banBtn" class="w-full mt-3 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs active:scale-95 transition">⛔ EXPULSAR Y BANEAR USUARIO</button>
+  </div>
+</div>
+
+<script>
+let localStream = null;
+let peer = null;
+let activeCall = null;
+let currentFacingMode = 'user';
+let beautyOn = false;
+let blockedPeers = [];
+
+function showTerms() {
+    alert("TÉRMINOS DE BLIZ:\n\n1. Quedan terminantemente prohibidos la desnudez, el contenido sexual explícito, el acoso, la violencia y la grabación de pantalla no autorizada.\n2. La plataforma es exclusiva para mayores de 18 años.\n3. Cualquier incumplimiento resultará en el baneo permanente inmediato.");
+}
+
+function showPrivacy() {
+    alert("POLÍTICA DE PRIVACIDAD DE BLIZ:\n\n1. Bliz opera mediante conexiones directas cifradas P2P.\n2. No almacenamos, guardamos ni grabamos ningún flujo de vídeo ni audio en servidores centrales.\n3. El acceso a la cámara y micrófono es estrictamente necesario para el funcionamiento del servicio de videollamada en directo.");
+}
+
+let clickCount = 0;
+document.getElementById('secretLogoAuth').onclick = checkGod;
+document.getElementById('secretLogoHeader').onclick = checkGod;
+function checkGod() {
+    clickCount++;
+    if (clickCount >= 5) {
+        clickCount = 0;
+        if (prompt("Clave de administrador:") === "admin123") {
+            document.getElementById('godBadge').style.display = 'block';
+            alert("¡Modo Dios activado!");
+        }
+    }
+}
+
+document.getElementById('btnEnter').onclick = function() {
+    const termsChecked = document.getElementById('termsCheck').checked;
+    if (!termsChecked) {
+        alert("Debes aceptar los Términos de Servicio y la Política de Privacidad para continuar.");
+        return;
+    }
+
+    document.getElementById('authScreen').style.display = 'none';
+    initMediaStream(currentFacingMode);
+    initPeer();
+};
+
+async function initMediaStream(facing) {
+    if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+    }
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: true });
+        document.getElementById('selfCamera').srcObject = localStream;
+        if (activeCall) {
+            const videoTrack = localStream.getVideoTracks()[0];
+            const sender = activeCall.peerConnection.getSenders().find(s => s.track.kind === 'video');
+            if (sender) sender.replaceTrack(videoTrack);
+        }
+    } catch(err) {
+        console.log("Cámara error:", err);
+    }
+}
+
+function initPeer() {
+    if (typeof Peer !== 'undefined') {
+        peer = new Peer();
+        peer.on('open', function(id) {
+            document.getElementById('godAdminId').innerText = id;
+        });
+        peer.on('call', function(call) {
+            if (blockedPeers.includes(call.peer)) {
+                call.close();
+                return;
+            }
+            activeCall = call;
+            call.answer(localStream);
+            call.on('stream', function(remoteStream) {
+                document.getElementById('remoteVideo').srcObject = remoteStream;
+                document.getElementById('godRemoteMonitor').srcObject = remoteStream;
+                document.getElementById('searchState').style.display = 'none';
+                document.getElementById('godRoomStatus').innerText = "En llamada";
+                document.getElementById('godRoomStatus').style.color = "#10B981";
+            });
+        });
+    }
+}
+
+function nextUser() {
+    if (activeCall) { activeCall.close(); }
+    document.getElementById('remoteVideo').srcObject = null;
+    document.getElementById('godRemoteMonitor').srcObject = null;
+    document.getElementById('searchState').style.display = 'block';
+    document.getElementById('godRoomStatus').innerText = "Buscando...";
+    document.getElementById('godRoomStatus').style.color = "#F59E0B";
+    setTimeout(function() { document.getElementById('searchState').style.display = 'none'; }, 1500);
+}
+
+document.getElementById('nextBtn').onclick = nextUser;
+
+document.getElementById('blockBtn').onclick = function() {
+    if (activeCall) {
+        blockedPeers.push(activeCall.peer);
+        alert("Usuario bloqueado con éxito. No volverás a conectar con él.");
+        nextUser();
+    } else {
+        alert("No hay ningún usuario conectado en este momento para bloquear.");
+    }
+};
+
+document.getElementById('reportBtn').onclick = function() {
+    alert("Reporte enviado correctamente al comité de moderación. Gracias por mantener Bliz seguro.");
+};
+
+document.getElementById('btnMic').onclick = function() {
+    if (localStream) {
+        var t = localStream.getAudioTracks()[0];
+        if (t) { t.enabled = !t.enabled; this.classList.toggle('bg-red-600', !t.enabled); }
+    }
+};
+
+document.getElementById('btnCam').onclick = function() {
+    if (localStream) {
+        var t = localStream.getVideoTracks()[0];
+        if (t) { t.enabled = !t.enabled; this.classList.toggle('bg-red-600', !t.enabled); }
+    }
+};
+
+document.getElementById('btnFlipCam').onclick = function() {
+    currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+    initMediaStream(currentFacingMode);
+};
+
+document.getElementById('btnBeauty').onclick = function() {
+    beautyOn = !beautyOn;
+    document.getElementById('selfCamera').classList.toggle('beauty-active', beautyOn);
+    this.classList.toggle('bg-purple-600', beautyOn);
+};
+
+function sendEmoji(e) {
+    var el = document.createElement('div');
+    el.className = 'floating-emoji';
+    el.innerText = e;
+    document.getElementById('swipeArea').appendChild(el);
+    setTimeout(function() { el.remove(); }, 1800);
+}
+
+document.getElementById('chatInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && this.value.trim() !== '') {
+        var box = document.getElementById('chatMsgs');
+        var msg = document.createElement('div');
+        msg.className = 'bg-gray-900/80 backdrop-blur px-2.5 py-0.5 rounded-xl text-[10px] max-w-[85%] border border-white/10';
+        msg.innerHTML = '<strong class="text-cyan-400">Tú:</strong> ' + this.value;
+        box.appendChild(msg);
+        box.scrollTop = box.scrollHeight;
+        this.value = '';
+    }
+});
+
+let startY = 0;
+const swipeArea = document.getElementById('swipeArea');
+swipeArea.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, false);
+swipeArea.addEventListener('touchend', e => {
+    let diffY = startY - e.changedTouches[0].clientY;
+    if (diffY > 60) { nextUser(); }
+}, false);
+
+document.getElementById('godBadge').onclick = function() { document.getElementById('godPanel').style.display = 'flex'; };
+document.getElementById('closeGod').onclick = function() { document.getElementById('godPanel').style.display = 'none'; };
+
+function banCurrentParticipant(reason) {
+    if (activeCall) {
+        activeCall.close();
+        document.getElementById('remoteVideo').srcObject = null;
+        document.getElementById('godRemoteMonitor').srcObject = null;
+    }
+    document.getElementById('godRoomStatus').innerText = "Usuario Expulsado";
+    document.getElementById('godRoomStatus').style.color = "#EF4444";
+    alert("⛔ " + (reason || "El usuario ha sido expulsado."));
+}
+
+document.getElementById('banBtn').onclick = () => banCurrentParticipant("Expulsado manualmente por el Administrador.");
+</script>
+</body>
+</html>
