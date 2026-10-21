@@ -114,10 +114,8 @@ html,body { background:#0B0F19; color:#fff; height:100dvh; width:100vw; display:
 </main>
 
 <script>
-// ===== PEGA TU CLAVE DE SUPABASE EN LA SEGUNDA LÍNEA =====
 const SUPABASE_URL = 'https://zcdgnzbegusizsxozfrr.supabase.co';
-const SUPABASE_KEY = 'Colmiyo1!_01';
-// =========================================================
+const SUPABASE_KEY = 'sb_publishable_Ro8hhOvmVVpUW7CfRzt88A_IUkQbYv7';
 const sb = (typeof supabase !== 'undefined' && !SUPABASE_KEY.startsWith('PEGA')) ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 const $ = id => document.getElementById(id);
 const EMOJIS = ['❤️','😂','🔥','👎','👋'];
@@ -223,7 +221,7 @@ async function nextUser(force) {
   if (dataConn) { try { dataConn.close(); } catch (e) {} dataConn = null; }
   $('remoteVideo').srcObject = null; $('remoteCountryBadge').style.display = 'none';
   showSearch('Buscando usuario en línea...');
-  if (!sb) return showSearch('Falta pegar tu clave de Supabase en el código (línea SUPABASE_KEY).');
+  if (!sb) return showSearch('Falta la clave de Supabase en el código.');
   if (!myId) return;
 
   const regErr = await register();
