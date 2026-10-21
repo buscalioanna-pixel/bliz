@@ -37,6 +37,40 @@ html, body {
 </head>
 <body class="flex flex-col h-[100dvh] w-full bg-[#0B0F19]">
 
+<!-- PANTALLA INICIAL (+18 Y TÉRMINOS) -->
+<div id="authScreen" class="fixed inset-0 bg-[#0B0F19] z-50 flex items-center justify-center p-4">
+  <div class="w-full max-w-xs bg-gray-900 border border-gray-800 rounded-3xl p-5 flex flex-col gap-3 text-center shadow-2xl">
+    <div class="text-3xl font-black bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent select-none">⚡ BLIZ</div>
+    <p class="text-[11px] text-gray-400">Plataforma de Videochat P2P Segura (+18)</p>
+
+    <div class="flex gap-2 justify-center">
+      <input type="text" id="inputDay" placeholder="Día" maxlength="2" inputmode="numeric" class="w-1/4 p-2 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none" value="15">
+      <input type="text" id="inputMonth" placeholder="Mes" maxlength="2" inputmode="numeric" class="w-1/4 p-2 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none" value="06">
+      <input type="text" id="inputYear" placeholder="Año" maxlength="4" inputmode="numeric" class="w-2/4 p-2 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none" value="2000">
+    </div>
+
+    <div class="flex items-center gap-2 text-left bg-gray-950 p-2.5 rounded-xl border border-gray-800">
+      <input type="checkbox" id="acceptCheck" checked class="w-4 h-4 accent-cyan-500 cursor-pointer">
+      <label for="acceptCheck" class="text-[10px] text-gray-300 leading-tight cursor-pointer">
+        Soy mayor de 18 y acepto las <span class="text-cyan-400 underline font-semibold cursor-pointer" onclick="openLegalModal('terms')">Condiciones</span> y <span class="text-cyan-400 underline font-semibold cursor-pointer" onclick="openLegalModal('privacy')">Privacidad</span>.
+      </label>
+    </div>
+
+    <button id="btnStartApp" type="button" class="w-full py-3 rounded-full font-bold text-white bg-gradient-to-r from-purple-600 to-cyan-500 hover:opacity-90 active:scale-95 transition shadow-lg cursor-pointer text-xs">
+      Entrar a Bliz
+    </button>
+  </div>
+</div>
+
+<!-- VENTANA MODAL LEGAL -->
+<div id="legalModal" class="hidden fixed inset-0 bg-black/90 z-50 p-5 flex flex-col justify-center items-center">
+  <div class="w-full max-w-sm bg-gray-900 border border-gray-800 rounded-2xl p-5 flex flex-col gap-3">
+    <h3 id="legalTitle" class="text-sm font-bold text-cyan-400"></h3>
+    <div id="legalContent" class="text-xs text-gray-300 max-h-60 overflow-y-auto leading-relaxed border-t border-b border-gray-800 py-3"></div>
+    <button onclick="closeLegalModal()" class="w-full py-2 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl text-xs cursor-pointer">Entendido</button>
+  </div>
+</div>
+
 <!-- HEADER PRINCIPAL -->
 <header class="flex-none flex justify-between items-center px-4 py-2.5 bg-gray-900 border-b border-gray-800">
   <div class="flex items-center gap-2">
@@ -106,3 +140,16 @@ html, body {
       <div id="chatMsgs" class="max-h-16 overflow-y-auto flex flex-col gap-1 pointer-events-none">
         <div class="bg-gray-900/80 backdrop-blur px-2.5 py-0.5 rounded-xl text-[10px] max-w-[85%] border border-white/10">
           <strong class="text-purple-400">Sistema:</strong> Conectado a Bliz. Respeto obligatorio.
+        </div>
+      </div>
+
+      <div class="flex gap-1.5">
+        <button onclick="sendEmoji('❤️')" class="bg-gray-900/80 border border-white/15 rounded-xl px-2 py-0.5 text-sm active:scale-90 transition cursor-pointer">❤️</button>
+        <button onclick="sendEmoji('😂')" class="bg-gray-900/80 border border-white/15 rounded-xl px-2 py-0.5 text-sm active:scale-90 transition cursor-pointer">😂</button>
+        <button onclick="sendEmoji('🔥')" class="bg-gray-900/80 border border-white/15 rounded-xl px-2 py-0.5 text-sm active:scale-90 transition cursor-pointer">🔥</button>
+        <button onclick="sendEmoji('👎')" class="bg-gray-900/80 border border-white/15 rounded-xl px-2 py-0.5 text-sm active:scale-90 transition cursor-pointer">👎</button>
+        <button onclick="sendEmoji('👋')" class="bg-gray-900/80 border border-white/15 rounded-xl px-2 py-0.5 text-sm active:scale-90 transition cursor-pointer">👋</button>
+      </div>
+
+      <div class="flex gap-1.5">
+        <input type="text" id="chatInput" placeholder="E
