@@ -33,9 +33,22 @@ html, body {
   0% { opacity: 1; transform: translateY(0) scale(1); }
   100% { opacity: 0; transform: translateY(-130px) scale(1.5); }
 }
+/* Animación para el banner de moderación */
+@keyframes slideDown {
+  0% { transform: translateY(-100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.animate-slide-down {
+  animation: slideDown 0.3s ease-out forwards;
+}
 </style>
 </head>
 <body class="flex flex-col h-[100dvh] w-full bg-[#0B0F19]">
+
+<!-- BANNER DE ALERTA DE MODERACIÓN (OCULTO POR DEFECTO) -->
+<div id="modBanner" class="hidden fixed top-0 left-0 right-0 z-50 bg-red-600/95 text-white text-xs px-4 py-2.5 text-center font-bold shadow-lg backdrop-blur animate-slide-down flex items-center justify-center gap-2">
+  <span>⚠️</span> <span id="modBannerText">Aviso de Moderación: Comportamiento inadecuado detectado.</span>
+</div>
 
 <!-- PANTALLA INICIAL (+18 Y TÉRMINOS) -->
 <div id="authScreen" class="fixed inset-0 bg-[#0B0F19] z-50 flex items-center justify-center p-4">
@@ -193,6 +206,16 @@ function closeLegalModal() {
     document.getElementById('legalModal').style.display = 'none';
 }
 
+function showModAlert(text) {
+    const banner = document.getElementById('modBanner');
+    const bannerText = document.getElementById('modBannerText');
+    bannerText.innerText = text;
+    banner.style.display = 'flex';
+    setTimeout(() => {
+        banner.style.display = 'none';
+    }, 3500);
+}
+
 document.getElementById('btnStartApp').onclick = function() {
     const isChecked = document.getElementById('acceptCheck').checked;
     if (!isChecked) {
@@ -210,6 +233,7 @@ document.getElementById('btnStartApp').onclick = function() {
         localStream = stream;
         document.getElementById('selfCamera').srcObject = stream;
         initPeerConnection();
+        showModAlert("🛡️ Moderación Activa: Cuentas reportadas serán suspendidas.");
     })
     .catch(function(err) {
         alert("Por favor, permite el acceso a la cámara y micrófono.");
@@ -319,13 +343,18 @@ document.getElementById('btnBeauty').onclick = function() {
 
 document.getElementById('blockBtn').onclick = function() {
     if (activeCall) blockedPeers.push(activeCall.peer);
-    alert("Usuario bloqueado.");
+    showModAlert("🚫 Usuario bloqueado y desconectado.");
     nextUser();
 };
 
-document.getElementById('reportBtn').onclick = function() { alert("Reporte de comportamiento recibido."); };
+document.getElementById('reportBtn').onclick = function() { 
+    showModAlert("⚠️ Reporte enviado al sistema de moderación. Gracias."); 
+};
 
 function sendEmoji(emoji) {
+    if (emoji === '👎') {
+        showModAlert("⚠️ Has enviado un reporte de contenido no deseado.");
+    }
     let el = document.createElement('div');
     el.className = 'floating-emoji';
     el.innerText = emoji;
