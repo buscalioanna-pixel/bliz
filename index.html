@@ -11,4 +11,263 @@
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,sans-serif; user-select:none; }
-html,body { background:#0B0F19; color:#fff; height:100dvh; w
+html,body { background:#0B0F19; color:#fff; height:100dvh; width:100vw; display:flex; flex-direction:column; overflow:hidden; touch-action:manipulation; }
+.beauty-active { filter:brightness(1.12) contrast(1.05) saturate(1.1) blur(0.3px); }
+.floating-emoji { position:absolute; bottom:70px; right:24px; font-size:32px; animation:floatUp 1.8s ease-out forwards; z-index:30; pointer-events:none; }
+@keyframes floatUp { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-130px) scale(1.5)} }
+@keyframes slideDown { 0%{transform:translateY(-100%);opacity:0} 100%{transform:translateY(0);opacity:1} }
+.animate-slide-down { animation:slideDown .3s ease-out forwards; }
+.ctl { width:44px; height:44px; border-radius:9999px; background:#1f2937; display:flex; align-items:center; justify-content:center; font-size:18px; cursor:pointer; flex:none; }
+.ctl.off { background:#b91c1c; }
+.ctl.on { background:#0891b2; }
+#chatLog { user-select:text; }
+</style>
+</head>
+<body>
+
+<div id="modBanner" class="hidden fixed top-0 left-0 right-0 z-50 bg-red-600/95 text-white text-xs px-4 py-2.5 text-center font-bold shadow-lg backdrop-blur animate-slide-down flex items-center justify-center gap-2">
+  <span>⚠️</span> <span id="modBannerText">Aviso de Moderación: Comportamiento inadecuado detectado.</span>
+</div>
+
+<!-- PANTALLA INICIAL -->
+<div id="authScreen" class="fixed inset-0 bg-[#0B0F19] z-50 flex items-center justify-center p-4">
+  <div class="w-full max-w-xs bg-gray-900 border border-gray-800 rounded-3xl p-5 flex flex-col gap-3 text-center shadow-2xl">
+    <div class="text-3xl font-black bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">⚡ BLIZ</div>
+    <p class="text-[11px] text-gray-400">Plataforma de Videochat P2P Segura (+18)</p>
+    <div class="flex gap-2 justify-center">
+      <input type="text" id="inputDay" placeholder="Día" maxlength="2" inputmode="numeric" class="w-1/4 p-2 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none">
+      <input type="text" id="inputMonth" placeholder="Mes" maxlength="2" inputmode="numeric" class="w-1/4 p-2 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none">
+      <input type="text" id="inputYear" placeholder="Año" maxlength="4" inputmode="numeric" class="w-2/4 p-2 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none">
+    </div>
+    <div class="flex items-center gap-2 text-left bg-gray-950 p-2.5 rounded-xl border border-gray-800">
+      <input type="checkbox" id="acceptCheck" class="w-4 h-4 accent-cyan-500 cursor-pointer">
+      <label for="acceptCheck" class="text-[10px] text-gray-300 leading-tight cursor-pointer">
+        Soy mayor de 18 y acepto las <span class="text-cyan-400 underline font-semibold" onclick="event.preventDefault();openLegalModal('terms')">Condiciones</span> y <span class="text-cyan-400 underline font-semibold" onclick="event.preventDefault();openLegalModal('privacy')">Privacidad</span>.
+      </label>
+    </div>
+    <p id="authError" class="hidden text-[11px] text-red-400"></p>
+    <button id="btnStartApp" type="button" class="w-full py-3 rounded-full font-bold text-white bg-gradient-to-r from-purple-600 to-cyan-500 hover:opacity-90 active:scale-95 transition shadow-lg cursor-pointer text-xs">Entrar a Bliz</button>
+  </div>
+</div>
+
+<!-- MODAL LEGAL -->
+<div id="legalModal" class="hidden fixed inset-0 bg-black/90 z-[60] p-5 flex flex-col justify-center items-center">
+  <div class="w-full max-w-sm bg-gray-900 border border-gray-800 rounded-2xl p-5 flex flex-col gap-3">
+    <h3 id="legalTitle" class="text-sm font-bold text-cyan-400"></h3>
+    <div id="legalContent" class="text-xs text-gray-300 max-h-60 overflow-y-auto leading-relaxed border-t border-b border-gray-800 py-3"></div>
+    <button onclick="closeLegalModal()" class="w-full py-2 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl text-xs cursor-pointer">Entendido</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="flex-none flex justify-between items-center px-4 py-2.5 bg-gray-900 border-b border-gray-800" style="padding-top:max(10px,env(safe-area-inset-top))">
+  <div class="flex items-center gap-2">
+    <div class="text-xl font-black bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">⚡ BLIZ</div>
+    <div class="flex items-center gap-1 bg-emerald-950/60 border border-emerald-500/40 px-2 py-0.5 rounded-full text-[10px] font-medium text-emerald-400">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span><span id="onlineCount">En línea</span>
+    </div>
+  </div>
+  <div id="statusText" class="text-[11px] text-gray-400">Listo</div>
+</header>
+
+<!-- VIDEO -->
+<main class="flex-1 relative bg-black min-h-0">
+  <video id="remoteVideo" autoplay playsinline class="absolute inset-0 w-full h-full object-cover"></video>
+  <div id="overlay" class="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center px-6 bg-[#0B0F19]/80 z-10">
+    <div id="overlayIcon" class="text-4xl">🌍</div>
+    <p id="overlayText" class="text-sm text-gray-300">Pulsa «Buscar» para conocer a alguien</p>
+  </div>
+  <video id="localVideo" autoplay playsinline muted class="absolute top-3 right-3 w-24 h-32 object-cover rounded-2xl border-2 border-gray-700 z-20 bg-gray-900" style="transform:scaleX(-1)"></video>
+  <div id="chatLog" class="absolute left-3 bottom-3 right-28 max-h-40 overflow-y-auto flex flex-col gap-1 z-20 text-xs pointer-events-none"></div>
+</main>
+
+<!-- CONTROLES -->
+<footer class="flex-none bg-gray-900 border-t border-gray-800 px-3 pt-2.5 flex flex-col gap-2.5" style="padding-bottom:max(10px,env(safe-area-inset-bottom))">
+  <form id="chatForm" class="flex gap-2" onsubmit="return false">
+    <input id="chatInput" type="text" maxlength="200" placeholder="Escribe un mensaje…" autocomplete="off" disabled class="flex-1 p-2.5 rounded-full bg-[#0B0F19] border border-gray-700 text-xs outline-none text-white disabled:opacity-40" style="user-select:text">
+    <button id="btnSend" type="submit" disabled class="px-4 rounded-full bg-cyan-600 text-xs font-bold disabled:opacity-40">Enviar</button>
+  </form>
+  <div class="flex items-center justify-between gap-2">
+    <div id="btnMic" class="ctl" title="Micrófono">🎤</div>
+    <div id="btnCam" class="ctl" title="Cámara">📷</div>
+    <div id="btnBeauty" class="ctl" title="Embellecer">✨</div>
+    <div id="btnEmoji" class="ctl" title="Reaccionar">😍</div>
+    <div id="btnReport" class="ctl" title="Reportar">🚩</div>
+    <button id="btnSearch" class="flex-1 h-11 rounded-full font-bold text-xs bg-gradient-to-r from-purple-600 to-cyan-500 active:scale-95 transition">Buscar</button>
+  </div>
+</footer>
+
+<script>
+/* ============ CONFIGURACIÓN: CAMBIA ESTAS 2 LÍNEAS ============ */
+const SUPABASE_URL = 'https://TU-PROYECTO.supabase.co';
+const SUPABASE_KEY = 'TU_ANON_KEY';
+/* ================================================================ */
+const REACTIONS = ['😍','😂','👍','🔥','👋','❤️'];
+
+const LEGAL = {
+  terms: ['Condiciones de uso','Bliz es solo para mayores de 18 años. Está prohibido mostrar desnudez, violencia, acoso, discurso de odio o cualquier contenido ilegal. Las conversaciones no se graban, pero puedes reportar a otros usuarios y los reportes pueden suponer el bloqueo de tu dispositivo. Usas el servicio bajo tu responsabilidad.'],
+  privacy: ['Política de privacidad','El vídeo y el audio viajan directamente entre los dos usuarios (P2P) y no pasan por nuestros servidores. Guardamos temporalmente un identificador anónimo de conexión para emparejarte y los reportes que envíes. Tu fecha de nacimiento solo se comprueba en tu dispositivo y no se envía.']
+};
+
+const $ = id => document.getElementById(id);
+const sb = (SUPABASE_URL.includes('TU-PROYECTO')) ? null : supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let peer, myId, localStream, call, dataConn, remoteId, searching = false, queued = false, searchTimer;
+let micOn = true, camOn = true, beauty = false, facing = 'user';
+
+function setStatus(t){ $('statusText').textContent = t; }
+function showOverlay(icon, text){ $('overlayIcon').textContent = icon; $('overlayText').textContent = text; $('overlay').classList.remove('hidden'); }
+function hideOverlay(){ $('overlay').classList.add('hidden'); }
+function banner(text){
+  $('modBannerText').textContent = text;
+  const b = $('modBanner'); b.classList.remove('hidden');
+  setTimeout(()=>b.classList.add('hidden'), 5000);
+}
+function addMsg(text, mine){
+  const d = document.createElement('div');
+  d.className = 'self-start max-w-full px-2.5 py-1 rounded-xl break-words ' + (mine ? 'bg-cyan-600/80' : 'bg-gray-800/90');
+  d.textContent = (mine ? 'Tú: ' : 'Él/ella: ') + text;
+  const log = $('chatLog'); log.appendChild(d); log.scrollTop = log.scrollHeight;
+  while (log.children.length > 30) log.removeChild(log.firstChild);
+}
+function floatEmoji(e){
+  const s = document.createElement('div'); s.className = 'floating-emoji'; s.textContent = e;
+  s.style.right = (24 + Math.random()*40) + 'px';
+  $('chatLog').parentElement.appendChild(s); setTimeout(()=>s.remove(), 1900);
+}
+function enableChat(on){ $('chatInput').disabled = !on; $('btnSend').disabled = !on; }
+
+function openLegalModal(k){ $('legalTitle').textContent = LEGAL[k][0]; $('legalContent').textContent = LEGAL[k][1]; $('legalModal').classList.remove('hidden'); }
+function closeLegalModal(){ $('legalModal').classList.add('hidden'); }
+
+function isAdult(d,m,y){
+  if (!(y>=1900 && m>=1 && m<=12 && d>=1 && d<=31)) return false;
+  const bd = new Date(y, m-1, d);
+  if (bd.getMonth() !== m-1 || bd.getDate() !== d) return false;
+  const now = new Date();
+  let age = now.getFullYear() - y;
+  if (now < new Date(now.getFullYear(), m-1, d)) age--;
+  return age >= 18 && age < 110;
+}
+function authError(t){ const e = $('authError'); e.textContent = t; e.classList.remove('hidden'); }
+$('btnStartApp').addEventListener('click', async () => {
+  const d = +$('inputDay').value, m = +$('inputMonth').value, y = +$('inputYear').value;
+  if (!isAdult(d,m,y)) return authError('Fecha no válida o eres menor de 18 años.');
+  if (!$('acceptCheck').checked) return authError('Debes aceptar las condiciones y la privacidad.');
+  try { if (localStorage.getItem('bliz_blocked')) return authError('Este dispositivo está bloqueado por moderación.'); } catch(e){}
+  $('authScreen').classList.add('hidden');
+  await initMedia();
+  initPeer();
+});
+
+async function initMedia(){
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:facing, width:{ideal:640}, height:{ideal:480} }, audio:{ echoCancellation:true, noiseSuppression:true } });
+    $('localVideo').srcObject = localStream;
+  } catch (e) {
+    showOverlay('🚫','Necesitamos cámara y micrófono (y una conexión HTTPS). Actualiza los permisos y recarga.');
+  }
+}
+$('btnMic').onclick = () => { if(!localStream) return; micOn = !micOn; localStream.getAudioTracks().forEach(t=>t.enabled=micOn); $('btnMic').classList.toggle('off',!micOn); $('btnMic').textContent = micOn?'🎤':'🔇'; };
+$('btnCam').onclick = () => { if(!localStream) return; camOn = !camOn; localStream.getVideoTracks().forEach(t=>t.enabled=camOn); $('btnCam').classList.toggle('off',!camOn); $('btnCam').textContent = camOn?'📷':'🚫'; };
+$('btnBeauty').onclick = () => { beauty = !beauty; $('localVideo').classList.toggle('beauty-active',beauty); $('btnBeauty').classList.toggle('on',beauty); };
+$('btnEmoji').onclick = () => {
+  const e = REACTIONS[Math.floor(Math.random()*REACTIONS.length)];
+  floatEmoji(e); send({t:'emoji', v:e});
+};
+
+function initPeer(){
+  peer = new Peer();
+  peer.on('open', id => { myId = id; setStatus('Listo'); });
+  peer.on('error', e => { setStatus('Error de red'); console.warn(e); if(searching) setTimeout(()=>{ if(searching) findMatch(); }, 1500); });
+  peer.on('call', c => {
+    if (call) { c.close(); return; }
+    leaveQueue();
+    c.answer(localStream);
+    attachCall(c);
+  });
+  peer.on('connection', conn => { if (!dataConn) attachData(conn); else conn.close(); });
+}
+
+function attachCall(c){
+  call = c; remoteId = c.peer;
+  c.on('stream', s => { $('remoteVideo').srcObject = s; hideOverlay(); setStatus('Conectado'); searching = false; clearTimeout(searchTimer); $('btnSearch').textContent = 'Siguiente'; });
+  c.on('close', () => endCall(true));
+  c.on('error', () => endCall(true));
+}
+function attachData(conn){
+  dataConn = conn;
+  conn.on('open', () => enableChat(true));
+  conn.on('data', m => {
+    if (!m || typeof m !== 'object') return;
+    if (m.t === 'msg' && typeof m.v === 'string') addMsg(m.v.slice(0,200), false);
+    else if (m.t === 'emoji' && REACTIONS.includes(m.v)) floatEmoji(m.v);
+    else if (m.t === 'report') banner('Aviso de Moderación: has sido reportado por otro usuario.');
+  });
+  conn.on('close', () => { enableChat(false); });
+}
+function send(obj){ if (dataConn && dataConn.open) dataConn.send(obj); }
+
+async function leaveQueue(){
+  if (!queued || !sb) return; queued = false;
+  try { await sb.from('waiting').delete().eq('peer_id', myId); } catch(e){}
+}
+async function findMatch(){
+  if (!sb) { showOverlay('⚙️','Configura SUPABASE_URL y SUPABASE_KEY en el código.'); searching = false; return; }
+  if (!peer || !myId || !localStream) { showOverlay('⏳','Esperando cámara y conexión…'); setTimeout(()=>searching && findMatch(),1000); return; }
+  showOverlay('🔎','Buscando a alguien…'); setStatus('Buscando…'); $('btnSearch').textContent = 'Cancelar';
+  try {
+    const cutoff = new Date(Date.now() - 60000).toISOString();
+    const { data: rows } = await sb.from('waiting').select('peer_id').neq('peer_id', myId).gt('created_at', cutoff).order('created_at',{ascending:true}).limit(5);
+    for (const r of (rows||[])) {
+      const { data: won } = await sb.from('waiting').delete().eq('peer_id', r.peer_id).select();
+      if (won && won.length) {
+        const c = peer.call(r.peer_id, localStream);
+        attachCall(c);
+        attachData(peer.connect(r.peer_id));
+        return;
+      }
+    }
+    await sb.from('waiting').upsert({ peer_id: myId, created_at: new Date().toISOString() });
+    queued = true;
+    searchTimer = setTimeout(() => { if (searching && !call) { leaveQueue().then(findMatch); } }, 8000);
+  } catch (e) { console.warn(e); setStatus('Error'); setTimeout(()=>searching && findMatch(),2000); }
+}
+
+function endCall(auto){
+  try { call && call.close(); } catch(e){}
+  try { dataConn && dataConn.close(); } catch(e){}
+  call = null; dataConn = null; remoteId = null;
+  $('remoteVideo').srcObject = null; enableChat(false); $('chatLog').innerHTML = '';
+  if (auto) { showOverlay('👋','La conversación terminó'); setStatus('Desconectado'); $('btnSearch').textContent = 'Buscar'; }
+}
+
+$('btnSearch').onclick = async () => {
+  if (searching) {
+    searching = false; clearTimeout(searchTimer); await leaveQueue();
+    showOverlay('🌍','Pulsa «Buscar» para conocer a alguien'); setStatus('Listo'); $('btnSearch').textContent = 'Buscar'; return;
+  }
+  endCall(false); await leaveQueue();
+  searching = true; findMatch();
+};
+
+$('chatForm').addEventListener('submit', () => {
+  const v = $('chatInput').value.trim(); if (!v) return;
+  send({t:'msg', v:v.slice(0,200)}); addMsg(v, true); $('chatInput').value = '';
+});
+
+$('btnReport').onclick = async () => {
+  if (!remoteId) return banner('No hay nadie a quien reportar.');
+  send({t:'report'});
+  try { if (sb) await sb.from('reports').insert({ reported_peer: remoteId, reporter_peer: myId }); } catch(e){}
+  banner('Reporte enviado. Gracias por mantener Bliz seguro.');
+  endCall(false); searching = true; findMatch();
+};
+
+window.addEventListener('pagehide', () => {
+  if (queued && sb) {
+    fetch(`${SUPABASE_URL}/rest/v1/waiting?peer_id=eq.${myId}`, { method:'DELETE', keepalive:true, headers:{ apikey:SUPABASE_KEY, Authorization:'Bearer '+SUPABASE_KEY } }).catch(()=>{});
+  }
+});
+</script>
+</body>
+</html>
