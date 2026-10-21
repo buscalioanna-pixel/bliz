@@ -7,9 +7,9 @@
 <meta name="theme-color" content="#0B0F19">
 <title>Bliz - Videochat Global</title>
 
-<!-- Tailwind CSS CDN -->
+<!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
-<!-- PeerJS CDN -->
+<!-- PeerJS -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
 <style>
@@ -37,7 +37,7 @@ html, body {
 </head>
 <body class="flex flex-col h-[100dvh] w-full bg-[#0B0F19]">
 
-<!-- PANTALLA INICIAL (+18) -->
+<!-- PANTALLA INICIAL (+18 Y LECTURA DE TÉRMINOS) -->
 <div id="authScreen" class="fixed inset-0 bg-[#0B0F19] z-50 flex flex-col justify-center items-center p-5 overflow-y-auto">
   <div class="w-full max-w-sm bg-gray-900 border border-gray-800 rounded-3xl p-6 flex flex-col gap-4 text-center shadow-2xl">
     <div id="secretLogoAuth" class="text-4xl font-black bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent cursor-pointer select-none">⚡ BLIZ</div>
@@ -52,26 +52,28 @@ html, body {
     <div class="flex items-start gap-2 text-left bg-gray-950 p-3 rounded-xl border border-gray-800">
       <input type="checkbox" id="acceptCheck" checked class="mt-0.5 w-4 h-4 accent-cyan-500 cursor-pointer">
       <label for="acceptCheck" class="text-[10px] text-gray-300 leading-tight cursor-pointer">
-        Soy mayor de edad (+18) y acepto los <span class="text-cyan-400 underline font-semibold" onclick="openModal('terms')">Términos</span> y la <span class="text-cyan-400 underline font-semibold" onclick="openModal('privacy')">Privacidad</span>.
+        Soy mayor de edad (+18) y acepto las 
+        <span class="text-cyan-400 underline font-semibold" onclick="openLegalModal('terms')">Condiciones de Uso</span> 
+        y la <span class="text-cyan-400 underline font-semibold" onclick="openLegalModal('privacy')">Privacidad</span>.
       </label>
     </div>
 
-    <button id="btnEnter" onclick="enterApp()" class="w-full py-3.5 rounded-full font-bold text-white bg-gradient-to-r from-purple-600 to-cyan-500 hover:opacity-90 active:scale-95 transition shadow-lg cursor-pointer">
+    <button onclick="enterAppDirectly()" class="w-full py-3.5 rounded-full font-bold text-white bg-gradient-to-r from-purple-600 to-cyan-500 hover:opacity-90 active:scale-95 transition shadow-lg cursor-pointer">
       Entrar a Bliz
     </button>
   </div>
 </div>
 
 <!-- VENTANA MODAL LEGAL -->
-<div id="legalModal" class="hidden fixed inset-0 bg-black/90 z-50 p-5 flex-col justify-center items-center">
+<div id="legalModal" class="hidden fixed inset-0 bg-black/90 z-50 p-5 flex flex-col justify-center items-center">
   <div class="w-full max-w-sm bg-gray-900 border border-gray-800 rounded-2xl p-5 flex flex-col gap-3">
     <h3 id="legalTitle" class="text-sm font-bold text-cyan-400"></h3>
     <div id="legalContent" class="text-xs text-gray-300 max-h-60 overflow-y-auto leading-relaxed border-t border-b border-gray-800 py-3"></div>
-    <button onclick="closeModal()" class="w-full py-2 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl text-xs">Cerrar</button>
+    <button onclick="closeLegalModal()" class="w-full py-2 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl text-xs">Entendido</button>
   </div>
 </div>
 
-<!-- HEADER CON CONTADOR ONLINE -->
+<!-- HEADER PRINCIPAL -->
 <header class="flex-none flex justify-between items-center px-4 py-2.5 bg-gray-900 border-b border-gray-800">
   <div class="flex items-center gap-2">
     <div id="secretLogoHeader" class="text-xl font-black bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent cursor-pointer">⚡ BLIZ</div>
@@ -91,6 +93,8 @@ html, body {
       <option value="GLOBAL">🌍 Todos los países</option>
       <option value="ES">🇪🇸 España</option>
       <option value="MX">🇲🇽 México</option>
+      <option value="CO">🇨🇴 Colombia</option>
+      <option value="AR">🇦🇷 Argentina</option>
     </select>
   </div>
   <div class="flex flex-1 items-center gap-1.5">
@@ -103,7 +107,7 @@ html, body {
   </div>
 </div>
 
-<!-- CONTENEDOR PRINCIPAL DE VÍDEO -->
+<!-- MAIN VIDEO CONTAINER -->
 <main class="flex-1 flex flex-col min-h-0 relative p-2 gap-2">
   <div id="swipeArea" class="flex-1 min-h-0 relative bg-black rounded-2xl overflow-hidden border border-gray-800 flex justify-center items-center">
     
@@ -112,10 +116,10 @@ html, body {
     <div id="searchState" class="z-10 text-center text-gray-400 pointer-events-none">
       <div class="text-4xl animate-bounce">🔍</div>
       <p class="mt-2 text-xs font-medium">Buscando usuario en línea...</p>
-      <p class="text-[10px] text-gray-500 mt-1">Desliza hacia arriba para omitir</p>
+      <p class="text-[10px] text-gray-500 mt-1">Desliza hacia arriba o toca Siguiente</p>
     </div>
 
-    <!-- CONTROLES FLOTANTES CÁMARA -->
+    <!-- CONTROLES FLOTANTES -->
     <div class="absolute top-2.5 left-2.5 flex flex-col gap-2 z-20">
       <button id="btnMic" class="w-8 h-8 rounded-full bg-gray-900/80 border border-white/20 text-white flex justify-center items-center text-xs backdrop-blur">🎤</button>
       <button id="btnCam" class="w-8 h-8 rounded-full bg-gray-900/80 border border-white/20 text-white flex justify-center items-center text-xs backdrop-blur">📹</button>
@@ -148,79 +152,126 @@ html, body {
 
   <!-- BOTONES INFERIORES -->
   <div class="flex-none flex gap-2 pb-1">
-    <button id="blockBtn" class="flex-1 py-2.5 rounded-full font-bold text-xs text-white bg-red-900/80 border border-red-700">🚫 Bloquear</button>
-    <button id="reportBtn" class="flex-1 py-2.5 rounded-full font-bold text-xs text-white bg-gray-800 border border-gray-700">⚠️ Reportar</button>
-    <button id="nextBtn" class="flex-1 py-2.5 rounded-full font-bold text-xs text-white bg-gradient-to-r from-purple-600 to-cyan-500">Siguiente ➔</button>
+    <button id="blockBtn" class="flex-1 py-2.5 rounded-full font-bold text-xs text-white bg-red-900/80 border border-red-700 hover:bg-red-800 active:scale-95 transition">🚫 Bloquear</button>
+    <button id="reportBtn" class="flex-1 py-2.5 rounded-full font-bold text-xs text-white bg-gray-800 border border-gray-700 hover:bg-gray-700 active:scale-95 transition">⚠️ Reportar</button>
+    <button id="nextBtn" onclick="nextUser()" class="flex-1 py-2.5 rounded-full font-bold text-xs text-white bg-gradient-to-r from-purple-600 to-cyan-500 hover:opacity-90 active:scale-95 transition">Siguiente ➔</button>
   </div>
 </main>
 
 <script>
 let localStream = null;
 let peer = null;
+let activeCall = null;
 let currentFacingMode = 'user';
 let beautyOn = false;
+let blockedPeers = [];
 
-function openModal(type) {
-    document.getElementById('legalModal').style.display = 'flex';
-    if(type === 'terms') {
-        document.getElementById('legalTitle').innerText = "Términos de Uso";
-        document.getElementById('legalContent').innerText = "1. Exclusivo para mayores de 18 años.\n2. Prohibido contenido explícito y acoso.\n3. Baneo inmediato por incumplimiento.";
+function openLegalModal(type) {
+    const modal = document.getElementById('legalModal');
+    const title = document.getElementById('legalTitle');
+    const content = document.getElementById('legalContent');
+
+    if (type === 'terms') {
+        title.innerText = "Términos y Condiciones de Uso";
+        content.innerText = "1. Bliz es un servicio exclusivo para mayores de 18 años.\n2. Prohibido acoso, desnudez o contenido inadecuado.\n3. Suspensión permanente por violaciones a las reglas.";
     } else {
-        document.getElementById('legalTitle').innerText = "Política de Privacidad";
-        document.getElementById('legalContent').innerText = "1. Conexiones P2P directas cifradas.\n2. No grabamos llamadas en servidores.";
+        title.innerText = "Política de Privacidad";
+        content.innerText = "1. Conexiones directas cifradas P2P entre dispositivos.\n2. No grabamos ni almacenamos videollamadas en servidores.";
     }
+    modal.style.display = 'flex';
 }
 
-function closeModal() {
+function closeLegalModal() {
     document.getElementById('legalModal').style.display = 'none';
 }
 
-function enterApp() {
-    const chk = document.getElementById('acceptCheck');
-    if (chk && !chk.checked) {
-        alert("Debes aceptar los Términos y la Privacidad.");
+function enterAppDirectly() {
+    const isChecked = document.getElementById('acceptCheck').checked;
+    if (!isChecked) {
+        alert("Debes aceptar los Términos y la Política de Privacidad.");
         return;
     }
 
-    // Forzar cierre de la pantalla de bienvenida
-    const screen = document.getElementById('authScreen');
-    if (screen) {
-        screen.style.cssText = "display: none !important;";
+    const authScreen = document.getElementById('authScreen');
+    if (authScreen) {
+        authScreen.style.setProperty('display', 'none', 'important');
     }
 
-    // Activar cámara
+    // Solicitar Cámara
     navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode }, audio: true })
     .then(function(stream) {
         localStream = stream;
         document.getElementById('selfCamera').srcObject = stream;
+        initPeerConnection();
     })
     .catch(function(err) {
-        console.log("Error de cámara:", err);
+        alert("Atención: No se obtuvo acceso a la cámara. Revisa los permisos de tu navegador.");
     });
+}
 
-    // Inicializar red P2P
+function initPeerConnection() {
     if (typeof Peer !== 'undefined') {
-        try {
-            peer = new Peer({ config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] } });
-        } catch(e){}
+        peer = new Peer({
+            config: {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' }
+                ]
+            }
+        });
+
+        peer.on('call', call => {
+            if (blockedPeers.includes(call.peer)) { call.close(); return; }
+            activeCall = call;
+            call.answer(localStream);
+            call.on('stream', remoteStream => {
+                document.getElementById('remoteVideo').srcObject = remoteStream;
+                document.getElementById('searchState').style.display = 'none';
+                try { if (navigator.vibrate) navigator.vibrate(100); } catch(e){}
+            });
+        });
     }
 }
 
-document.getElementById('nextBtn').onclick = function() {
+function nextUser() {
+    if (activeCall) {
+        activeCall.close();
+        activeCall = null;
+    }
     document.getElementById('remoteVideo').srcObject = null;
     document.getElementById('searchState').style.display = 'block';
-    setTimeout(function() {
+
+    setTimeout(() => {
         document.getElementById('searchState').style.display = 'none';
-    }, 1500);
+    }, 1800);
+}
+
+document.getElementById('btnMic').onclick = function() {
+    if (localStream) {
+        let track = localStream.getAudioTracks()[0];
+        if (track) {
+            track.enabled = !track.enabled;
+            this.classList.toggle('bg-red-600', !track.enabled);
+        }
+    }
+};
+
+document.getElementById('btnCam').onclick = function() {
+    if (localStream) {
+        let track = localStream.getVideoTracks()[0];
+        if (track) {
+            track.enabled = !track.enabled;
+            this.classList.toggle('bg-red-600', !track.enabled);
+        }
+    }
 };
 
 document.getElementById('btnFlipCam').onclick = function() {
     currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
-    if (localStream) {
-        localStream.getTracks().forEach(t => t.stop());
-    }
+    if (localStream) localStream.getTracks().forEach(t => t.stop());
+    
     navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode }, audio: true })
-    .then(function(stream) {
+    .then(stream => {
         localStream = stream;
         document.getElementById('selfCamera').srcObject = stream;
     });
@@ -232,22 +283,29 @@ document.getElementById('btnBeauty').onclick = function() {
     this.classList.toggle('bg-purple-600', beautyOn);
 };
 
-document.getElementById('blockBtn').onclick = function() { alert("Usuario bloqueado."); };
-document.getElementById('reportBtn').onclick = function() { alert("Reporte enviado."); };
+document.getElementById('blockBtn').onclick = function() {
+    if (activeCall) blockedPeers.push(activeCall.peer);
+    alert("Usuario bloqueado.");
+    nextUser();
+};
 
-let clickCount = 0;
-document.getElementById('secretLogoAuth').onclick = triggerGod;
-document.getElementById('secretLogoHeader').onclick = triggerGod;
-function triggerGod() {
-    clickCount++;
-    if(clickCount >= 5) {
-        clickCount = 0;
-        if(prompt("Clave admin:") === "admin123") {
-            document.getElementById('godBadge').style.display = 'block';
-            alert("Modo Dios activado");
-        }
-    }
+document.getElementById('reportBtn').onclick = function() { alert("Reporte de comportamiento recibido."); };
+
+function sendEmoji(emoji) {
+    let el = document.createElement('div');
+    el.className = 'floating-emoji';
+    el.innerText = emoji;
+    document.getElementById('swipeArea').appendChild(el);
+    setTimeout(() => el.remove(), 1800);
 }
+
+// Deslizar arriba en la pantalla para saltar
+let touchStartY = 0;
+const swipeBox = document.getElementById('swipeArea');
+swipeBox.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, false);
+swipeBox.addEventListener('touchend', e => {
+    if (touchStartY - e.changedTouches[0].clientY > 60) nextUser();
+}, false);
 </script>
 </body>
 </html>
