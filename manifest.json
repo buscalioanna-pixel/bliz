@@ -1,18 +1,1 @@
-{
-  "name": "Bliz - Videochat Global",
-  "short_name": "Bliz",
-  "description": "Aplicación de videochat aleatorio y llamadas P2P en vivo.",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#0B0F19",
-  "theme_color": "#0B0F19",
-  "orientation": "portrait",
-  "icons": [
-    {
-      "src": "https://img.icons8.com/color/512/flash-on.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ]
-}
+{"name":"Bliz - Videochat Global","short_name":"Bliz","start_url":".","display":"standalone","background_color":"#0B0F19","theme_color":"#0B0F19","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]}
