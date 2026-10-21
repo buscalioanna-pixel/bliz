@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<link rel="manifest" href="manifest.json">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0B0F19">
+<title>Bliz - Videochat Global</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,-apple-system,sans-serif; user-select:none; -webkit-tap-highlight-color:transparent; }
+html,body { background:#0B0F19; color:#fff; height:100dvh; width:100%; display:flex; flex-direction:column; overflow:hidden; touch-action:manipulation; }
+body { padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+.beauty-active { filter:brightness(1.12) contrast(1.05) saturate(1.1) blur(0.3px); }
+.mirror { transform:scaleX(-1); }
+.floating-emoji { position:absolute; bottom:70px; right:24px; font-size:36px; animation:floatUp 1.8s ease-out forwards; z-index:30; pointer-events:none; }
+@keyframes floatUp { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-160px) scale(1.5)} }
+@keyframes slideDown { 0%{transform:translateY(-100%);opacity:0} 100%{transform:translateY(0);opacity:1} }
+@keyframes msgIn { 0%{opacity:0;transform:translateY(6px)} 100%{opacity:1;transform:none} }
+@keyframes ring { 0%{box-shadow:0 0 0 0 rgba(239,68,68,.55)} 70%{box-shadow:0 0 0 10px rgba(239,68,68,0)} 100%{box-shadow:0 0 0 0 rgba(239,68,68,0)} }
+.animate-slide-down { animation:slideDown .3s ease-out forwards; }
+.msg-in { animation:msgIn .25s ease-out; }
+.pulse-ring { animation:ring 2.2s infinite; }
+#chatMsgs { scrollbar-width:none; }
+#chatMsgs::-webkit-scrollbar { display:none; }
+#chatInput { user-select:text; }
+input, select { user-select:text; }
+.glass { background:rgba(11,15,25,.55); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.14); }
+select { -webkit-appearance:none; appearance:none; }
+.btn-grad { background-image:linear-gradient(90deg,#7c3aed,#06b6d4); }
+</style>
+</head>
+<body class="bg-[#0B0F19]">
+
+<div id="modBanner" class="hidden fixed top-0 left-0 right-0 z-50 bg-red-600/95 text-white text-xs px-4 py-2.5 text-center font-bold shadow-lg backdrop-blur animate-slide-down items-center justify-center gap-2">
+  <span>⚠️</span> <span id="modBannerText"></span>
+</div>
+
+<!-- PANTALLA DE ACCESO -->
+<div id="authScreen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,#1e1b4b,#0B0F19_65%)]">
+  <div class="w-full max-w-sm bg-gray-900/80 backdrop-blur border border-white/10 rounded-3xl p-6 flex flex-col gap-4 text-center shadow-2xl">
+    <div class="text-4xl font-black bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">⚡ BLIZ</div>
+    <p class="text-xs text-gray-400">Videochat P2P seguro · Solo mayores de 18</p>
+    <div>
+      <p class="text-[11px] text-gray-500 text-left mb-1.5 font-semibold uppercase tracking-wide">Fecha de nacimiento</p>
+      <div class="flex gap-2 justify-center">
+        <input type="text" id="inputDay" placeholder="Día" maxlength="2" inputmode="numeric" class="w-1/4 p-3 rounded-xl border border-gray-700 bg-gray-950 text-white text-center text-sm outline-none focus:border-cyan-500">
+        <input type="text" id="inputMonth" placeholder="Mes" maxlength="2" inputmode="numeric" class="w-1/4 p-3 rounded-xl border border-gray-700 bg-gray-950 text-white text-center text-sm outline-none focus:border-cyan-500">
+        <input type="text" id="inputYear" placeholder="Año" maxlength="4" inputmode="numeric" class="w-2/5 p-3 rounded-xl border border-gray-700 bg-gray-950 text-white text-center text-sm outline-none focus:border-cyan-500">
+      </div>
+    </div>
+    <label class="flex items-start gap-2 text-xs text-gray-400 text-left">
+      <input type="checkbox" id="acceptCheck" class="mt-0.5 accent-cyan-500">
+      <span>Soy mayor de 18 años y acepto los <a href="#" onclick="openLegalModal('terms');return false" class="text-cyan-400 underline">Términos</a> y la <a href="#" onclick="openLegalModal('privacy');return false" class="text-cyan-400 underline">Política de Privacidad</a>.</span>
+    </label>
+    <button id="btnStartApp" class="btn-grad w-full py-3.5 rounded-2xl font-bold text-sm text-white shadow-lg shadow-purple-900/40 active:scale-95 transition">Entrar</button>
+  </div>
+</div>
+
+<!-- MODAL LEGAL -->
+<div id="legalModal" class="hidden fixed inset-0 z-[60] bg-black/80 items-center justify-center p-4">
+  <div class="w-full max-w-sm bg-gray-900 border border-gray-800 rounded-2xl p-5 flex flex-col gap-3">
+    <h2 id="legalTitle" class="font-bold text-sm"></h2>
+    <p id="legalContent" class="text-xs text-gray-300 whitespace-pre-line leading-relaxed"></p>
+    <button onclick="closeLegalModal()" class="py-2.5 rounded-full bg-gray-800 border border-gray-700 text-xs font-bold">Cerrar</button>
+  </div>
+</div>
+
+<main class="flex-1 flex flex-col min-h-0">
+
+  <!-- VIDEO PRINCIPAL (≈47% de la pantalla, a todo el ancho) -->
+  <div id="swipeArea" class="relative flex-none h-[47dvh] bg-black rounded-b-[28px] overflow-hidden shadow-2xl flex justify-center items-center">
+    <video id="remoteVideo" autoplay playsinline class="absolute inset-0 w-full h-full object-cover z-0 bg-gray-950"></video>
+    <div class="absolute inset-0 z-10 pointer-events-none bg-gradient-to-b from-black/45 via-transparent to-black/55"></div>
+
+    <div class="absolute top-3 left-3 z-20 flex items-center gap-2">
+      <div class="text-xl font-black bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent drop-shadow">⚡ BLIZ</div>
+      <div class="glass flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-emerald-400">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span><span id="onlineCount">1</span> online
+      </div>
+    </div>
+    <button onclick="document.getElementById('reportBtn').click()" aria-label="Denunciar" class="absolute top-3 right-3 z-20 w-10 h-10 rounded-full bg-red-600/90 border border-red-300/50 flex items-center justify-center shadow-lg active:scale-90 transition">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M5 2h2v20H5zM8 3h12l-3 5 3 5H8z"/></svg>
+    </button>
+
+    <div id="searchState" class="z-10 text-center text-white pointer-events-none px-6">
+      <div class="mx-auto w-20 h-16 rounded-3xl bg-white/95 flex items-center justify-center gap-1.5 shadow-xl animate-bounce">
+        <span class="w-3 h-3 rounded-full bg-indigo-600"></span><span class="w-3 h-3 rounded-full bg-indigo-600"></span><span class="w-3 h-3 rounded-full bg-indigo-600"></span>
+      </div>
+      <p class="mt-3 text-base font-bold drop-shadow" id="searchText">Buscando usuario en línea...</p>
+    </div>
+
+    <!-- Filtros sobre el video -->
+    <div class="absolute left-3 right-3 bottom-3 z-20 flex gap-2">
+      <label class="glass flex-1 min-w-0 h-11 rounded-xl flex items-center overflow-hidden">
+        <span class="w-11 h-full flex-none flex items-center justify-center bg-red-500/70 text-base">🌐</span>
+        <select id="countrySelect" aria-label="País" class="flex-1 min-w-0 h-full px-2 bg-transparent text-white text-sm font-semibold outline-none">
+          <option value="GLOBAL">Todos</option><option value="ES">🇪🇸 España</option><option value="MX">🇲🇽 México</option><option value="CO">🇨🇴 Colombia</option><option value="AR">🇦🇷 Argentina</option>
+        </select>
+      </label>
+      <label class="glass flex-1 min-w-0 h-11 rounded-xl flex items-center overflow-hidden">
+        <span class="w-11 h-full flex-none flex items-center justify-center bg-sky-500/70 text-base">👤</span>
+        <select id="myGenderSelect" aria-label="Soy" class="flex-1 min-w-0 h-full px-2 bg-transparent text-white text-sm font-semibold outline-none">
+          <option value="MALE">Soy Hombre</option><option value="FEMALE">Soy Mujer</option><option value="GROUP">Somos Grupo</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <!-- ZONA MEDIA: estado, denunciar/bloquear, reacciones y chat -->
+  <section class="flex-1 min-h-0 flex flex-col gap-2 px-3 pt-3">
+    <div class="flex-none h-7 flex items-center justify-center">
+      <div id="remoteCountryBadge" class="hidden items-center gap-2 text-sm font-semibold text-gray-200">
+        <span id="remoteFlag" class="text-xl">🌍</span> <span id="remoteCountryName"></span>
+      </div>
+    </div>
+
+    <div class="flex-none flex gap-2">
+      <button id="reportBtn" class="pulse-ring flex-[1.4] h-12 rounded-2xl font-extrabold text-sm text-white bg-gradient-to-b from-red-500 to-red-700 border border-red-300/60 shadow-lg shadow-red-900/50 active:scale-95 transition tracking-wide">🚩 DENUNCIAR</button>
+      <button id="blockBtn" class="flex-1 h-12 rounded-2xl font-bold text-sm text-gray-100 bg-gray-800 border border-gray-600 active:scale-95 transition">🚫 Bloquear</button>
+    </div>
+
+    <div class="flex-none flex gap-2">
+      <button onclick="sendEmoji('❤️')" class="flex-1 bg-gray-900/80 border border-white/10 rounded-full py-1 text-lg active:scale-90 transition">❤️</button>
+      <button onclick="sendEmoji('😂')" class="flex-1 bg-gray-900/80 border border-white/10 rounded-full py-1 text-lg active:scale-90 transition">😂</button>
+      <button onclick="sendEmoji('🔥')" class="flex-1 bg-gray-900/80 border border-white/10 rounded-full py-1 text-lg active:scale-90 transition">🔥</button>
+      <button onclick="sendEmoji('👋')" class="flex-1 bg-gray-900/80 border border-white/10 rounded-full py-1 text-lg active:scale-90 transition">👋</button>
+      <button onclick="sendEmoji('👎')" class="flex-1 bg-gray-900/80 border border-white/10 rounded-full py-1 text-lg active:scale-90 transition">👎</button>
+    </div>
+
+    <div id="chatMsgs" class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1.5 bg-gray-900/40 rounded-2xl p-2">
+      <div class="msg-in self-start bg-gray-800/90 px-3 py-1.5 rounded-2xl text-[12px] max-w-[85%] border border-white/10"><strong class="text-purple-400">Sistema:</strong> Conectado a Bliz. Respeto obligatorio.</div>
+    </div>
+  </section>
+
+  <!-- BARRA INFERIOR: mi cámara (1/3 del ancho) + mensaje + Detener / Siguiente -->
+  <div class="flex-none flex gap-2 p-2 pt-2">
+    <div class="relative flex-none rounded-2xl overflow-hidden border-2 border-purple-500/70 bg-gray-900 shadow-xl" style="width:33vw;height:min(33vw,19dvh)">
+      <video id="selfCamera" autoplay playsinline muted class="mirror w-full h-full object-cover transition-all"></video>
+      <button id="btnFlipCam" aria-label="Girar cámara" class="glass absolute top-1.5 left-1.5 w-9 h-9 rounded-lg flex items-center justify-center text-base active:scale-90 transition">🔄</button>
+      <button id="btnBeauty" aria-label="Embellecer" class="glass absolute top-1.5 right-1.5 w-9 h-9 rounded-lg flex items-center justify-center text-base active:scale-90 transition">✨</button>
+    </div>
+
+    <div class="flex-1 min-w-0 flex flex-col gap-2" style="height:min(33vw,19dvh)">
+      <div class="relative flex-none h-[38%] min-h-[40px]">
+        <input type="text" id="chatInput" placeholder="Tu mensaje..." maxlength="200" autocomplete="off" enterkeyhint="send" class="w-full h-full pl-4 pr-14 rounded-2xl border border-gray-700 bg-gray-950 text-white text-sm outline-none focus:border-cyan-500">
+        <button id="sendBtn" onclick="sendChat()" aria-label="Enviar mensaje" class="btn-grad absolute right-1.5 top-1.5 bottom-1.5 w-11 rounded-xl flex items-center justify-center text-white active:scale-90 transition">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+      <div class="flex-1 min-h-0 flex gap-2">
+        <button id="stopBtn" onclick="stopSearch()" aria-label="Detener" class="flex-1 rounded-2xl bg-gradient-to-b from-red-400 to-red-600 text-white flex flex-col items-center justify-center gap-0.5 shadow-lg shadow-red-900/40 active:scale-95 transition">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
+          <span class="text-[10px] font-bold">Detener</span>
+        </button>
+        <button id="nextBtn" onclick="manualNext()" aria-label="Siguiente" class="btn-grad flex-1 rounded-2xl text-white flex flex-col items-center justify-center gap-0.5 shadow-lg shadow-purple-900/40 active:scale-95 transition">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>
+          <span class="text-[10px] font-bold">Siguiente</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const SUPABASE_URL = 'https://zcdgnzbegusizsxozfrr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Ro8hhOvmVVpUW7CfRzt88A_IUkQbYv7';
+const sb = (typeof supabase !== 'undefined' && !SUPABASE_KEY.startsWith('PEGA')) ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const $ = id => document.getElementById(id);
+const EMOJIS = ['❤️','😂','🔥','👎','👋'];
+const NAMES = { ES:'España', MX:'México', CO:'Colombia', AR:'Argentina', US:'Estados Unidos', CL:'Chile', PE:'Perú', VE:'Venezuela', EC:'Ecuador', UY:'Uruguay', FR:'Francia', IT:'Italia', DE:'Alemania', PT:'Portugal', BR:'Brasil', GB:'Reino Unido' };
+let localStream, peer, myId, myCountry = 'XX', activeCall, dataConn, connected = false;
+let stopped = false, facing = 'user', beauty = false, blocked = [], lastSkip = 0, searchTimer, callTimer, regInterval;
+
+const flagOf = c => (!c || c.length !== 2 || c === 'XX') ? '🌍' : c.toUpperCase().replace(/./g, x => String.fromCodePoint(127397 + x.charCodeAt(0)));
+const nameOf = c => NAMES[c] || c || 'Global';
+const errText = e => e ? (e.message || e.code || JSON.stringify(e)) : '';
+
+async function detectCountry() {
+  try { const j = await (await fetch('https://ipapi.co/json/')).json(); if (j && j.country_code) return j.country_code.toUpperCase(); } catch (e) {}
+  const l = (navigator.language || '').split('-')[1]; return l ? l.toUpperCase() : 'XX';
+}
+function modAlert(t) { $('modBannerText').innerText = t; $('modBanner').style.display = 'flex'; setTimeout(() => $('modBanner').style.display = 'none', 3500); }
+function showSearch(t) { $('searchText').innerText = t; $('searchState').style.display = 'block'; }
+function showBadge(flag, name) { $('remoteFlag').innerText = flag; $('remoteCountryName').innerText = name; $('remoteCountryBadge').style.display = 'flex'; }
+
+function openLegalModal(t) {
+  $('legalTitle').innerText = t === 'terms' ? 'Términos y Condiciones de Uso' : 'Política de Privacidad';
+  $('legalContent').innerText = t === 'terms'
+    ? '1. Bliz es un servicio exclusivo para mayores de 18 años.\n2. Prohibido acoso, desnudez o contenido inadecuado.\n3. Suspensión permanente por violaciones a las reglas.'
+    : '1. Conexiones directas cifradas P2P entre dispositivos.\n2. No grabamos ni almacenamos videollamadas en servidores.\n3. Guardamos un identificador anónimo temporal y tu país para emparejarte.';
+  $('legalModal').style.display = 'flex';
+}
+function closeLegalModal() { $('legalModal').style.display = 'none'; }
+
+function isAdult(d, m, y) {
+  if (!(y >= 1900 && m >= 1 && m <= 12 && d >= 1 && d <= 31)) return null;
+  const bd = new Date(y, m - 1, d);
+  if (bd.getMonth() !== m - 1 || bd.getDate() !== d) return null;
+  const now = new Date(); if (bd > now) return null;
+  let age = now.getFullYear() - y;
+  if (now < new Date(now.getFullYear(), m - 1, d)) age--;
+  return age >= 18;
+}
+
+$('btnStartApp').onclick = function () {
+  if (!$('acceptCheck').checked) return alert('Debes aceptar los Términos y la Política de Privacidad.');
+  const d = parseInt($('inputDay').value, 10), m = parseInt($('inputMonth').value, 10), y = parseInt($('inputYear').value, 10);
+  if (isNaN(d) || isNaN(m) || isNaN(y)) return alert('Introduce tu fecha de nacimiento completa.');
+  const a = isAdult(d, m, y);
+  if (a === null) return alert('Introduce una fecha de nacimiento válida.');
+  if (!a) return alert('Debes tener al menos 18 años para utilizar Bliz.');
+  $('authScreen').style.display = 'none';
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: true }).then(async s => {
+    localStream = s; $('selfCamera').srcObject = s;
+    myCountry = await detectCountry();
+    initPeer();
+    modAlert('🛡️ Moderación Activa: Cuentas reportadas serán suspendidas.');
+  }).catch(() => { alert('Permite el acceso a cámara y micrófono (la web debe abrirse con https).'); $('authScreen').style.display = 'flex'; });
+};
+
+function initPeer() {
+  if (typeof Peer === 'undefined') return;
+  const turn = u => ({ urls: u, username: 'openrelayproject', credential: 'openrelayproject' });
+  peer = new Peer({ config: { iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' },
+    turn('turn:openrelay.metered.ca:80'), turn('turn:openrelay.metered.ca:443'), turn('turn:openrelay.metered.ca:443?transport=tcp')
+  ] } });
+  peer.on('open', id => { myId = id; register(); clearInterval(regInterval); regInterval = setInterval(register, 10000); nextUser(true); });
+  peer.on('call', c => {
+    if (blocked.includes(c.peer) || activeCall || stopped) return c.close();
+    clearTimeout(searchTimer); c.answer(localStream); setupCall(c, 'Conectado');
+  });
+  peer.on('connection', c => blocked.includes(c.peer) ? c.close() : setupData(c));
+  peer.on('error', e => { console.warn(e); if (e.type === 'peer-unavailable') nextUser(true); });
+  peer.on('disconnected', () => { try { peer.reconnect(); } catch (e) {} });
+}
+
+function setupCall(c, label, flag) {
+  activeCall = c; connected = false;
+  c.on('stream', s => { connected = true; clearTimeout(callTimer); $('remoteVideo').srcObject = s; $('searchState').style.display = 'none'; showBadge(flag || '🌍', label); });
+  const end = () => { if (activeCall === c) { activeCall = null; connected = false; nextUser(true); } };
+  c.on('close', end); c.on('error', end);
+}
+function setupData(c) {
+  dataConn = c;
+  c.on('open', () => send({ t: 'country', v: myCountry }));
+  c.on('data', m => {
+    if (!m || typeof m !== 'object') return;
+    if (m.t === 'msg' && typeof m.v === 'string') addChat(m.v.slice(0, 200), false);
+    else if (m.t === 'emoji' && EMOJIS.includes(m.v)) floatEmoji(m.v);
+    else if (m.t === 'country' && typeof m.v === 'string' && m.v.length === 2) showBadge(flagOf(m.v), 'Conectado (' + nameOf(m.v.toUpperCase()) + ')');
+    else if (m.t === 'report') modAlert('⚠️ Aviso de Moderación: otro usuario te ha reportado.');
+  });
+}
+function stopSearch() {
+  stopped = true; clearTimeout(searchTimer); clearTimeout(callTimer);
+  const old = activeCall; activeCall = null; connected = false;
+  if (old) try { old.close(); } catch (e) {}
+  if (dataConn) { try { dataConn.close(); } catch (e) {} dataConn = null; }
+  $('remoteVideo').srcObject = null; $('remoteCountryBadge').style.display = 'none';
+  showSearch('Búsqueda detenida. Toca Siguiente para continuar.');
+}
+function manualNext() { stopped = false; nextUser(); }
+function send(o) { if (dataConn && dataConn.open) dataConn.send(o); }
+
+async function register() {
+  if (!sb || !myId) return null;
+  try {
+    const { error } = await sb.from('active_users').upsert({ id: myId, gender: $('myGenderSelect').value, country: myCountry, updated_at: new Date().toISOString() });
+    return error || null;
+  } catch (e) { return e; }
+}
+
+async function nextUser(force) {
+  if (stopped) return;
+  const now = Date.now();
+  if (!force && now - lastSkip < 1200) { showSearch('Por favor, ve más despacio...'); setTimeout(() => $('searchText').innerText = 'Buscando usuario en línea...', 1000); return; }
+  lastSkip = now; clearTimeout(searchTimer); clearTimeout(callTimer);
+  const old = activeCall; activeCall = null; connected = false;
+  if (old) try { old.close(); } catch (e) {}
+  if (dataConn) { try { dataConn.close(); } catch (e) {} dataConn = null; }
+  $('remoteVideo').srcObject = null; $('remoteCountryBadge').style.display = 'none';
+  showSearch('Buscando usuario en línea...');
+  if (!sb) return showSearch('Falta la clave de Supabase en el código.');
+  if (!myId) return;
+
+  const regErr = await register();
+  if (regErr) { showSearch('Error al registrarte: ' + errText(regErr)); searchTimer = setTimeout(() => { if (!activeCall) nextUser(true); }, 5000); return; }
+
+  const sel = $('countrySelect').value;
+  let q = sb.from('active_users').select('*').neq('id', myId).gt('updated_at', new Date(Date.now() - 30000).toISOString());
+  if (sel && sel !== 'GLOBAL') q = q.eq('country', sel);
+  const { data, error } = await q;
+  if (error) { showSearch('Error: ' + errText(error)); searchTimer = setTimeout(() => { if (!activeCall) nextUser(true); }, 5000); return; }
+  if (activeCall || stopped) return;
+  $('onlineCount').innerText = (data ? data.length : 0) + 1;
+
+  const cand = (data || []).filter(u => u.id > myId && !blocked.includes(u.id));
+  if (cand.length) {
+    const t = cand[Math.floor(Math.random() * cand.length)];
+    showBadge(flagOf(t.country), 'Conectando con ' + nameOf(t.country));
+    setupCall(peer.call(t.id, localStream), 'Conectado (' + nameOf(t.country) + ')', flagOf(t.country));
+    setupData(peer.connect(t.id));
+    callTimer = setTimeout(() => { if (!connected) nextUser(true); }, 10000);
+    return;
+  }
+  searchTimer = setTimeout(() => { if (!activeCall) nextUser(true); }, 3000);
+}
+
+$('btnFlipCam').onclick = function () {
+  facing = facing === 'user' ? 'environment' : 'user'; $('selfCamera').classList.toggle('mirror', facing === 'user');
+  if (localStream) localStream.getTracks().forEach(t => t.stop());
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: true }).then(s => {
+    localStream = s; $('selfCamera').srcObject = s;
+    if (activeCall && activeCall.peerConnection) activeCall.peerConnection.getSenders().forEach(x => {
+      if (!x.track) return; const n = s.getTracks().find(t => t.kind === x.track.kind); if (n) x.replaceTrack(n);
+    });
+  }).catch(() => alert('No se pudo cambiar la cámara.'));
+};
+$('btnBeauty').onclick = function () { beauty = !beauty; $('selfCamera').classList.toggle('beauty-active', beauty); this.classList.toggle('!bg-purple-600', beauty); };
+$('blockBtn').onclick = function () {
+  if (!activeCall) return modAlert('No hay nadie conectado para bloquear.');
+  blocked.push(activeCall.peer); modAlert('🚫 Usuario bloqueado y desconectado.'); nextUser(true);
+};
+$('reportBtn').onclick = async function () {
+  if (!activeCall) return modAlert('No hay nadie conectado para reportar.');
+  const r = activeCall.peer; send({ t: 'report' }); blocked.push(r);
+  try { if (sb) await sb.from('reports').insert({ reported_id: r, reporter_id: myId }); } catch (e) {}
+  modAlert('⚠️ Reporte enviado al sistema de moderación. Gracias.'); nextUser(true);
+};
+
+function addChat(text, mine) {
+  const d = document.createElement('div');
+  d.className = 'msg-in px-3 py-1.5 rounded-2xl text-[12px] max-w-[85%] border border-white/10 break-words ' + (mine ? 'self-end bg-purple-700/70' : 'self-start bg-gray-800/90');
+  const w = document.createElement('strong'); w.className = mine ? 'text-cyan-400' : 'text-purple-400'; w.textContent = mine ? 'Tú: ' : 'Él/ella: ';
+  d.appendChild(w); d.appendChild(document.createTextNode(text));
+  const b = $('chatMsgs'); b.appendChild(d); b.scrollTop = b.scrollHeight;
+  while (b.children.length > 40) b.removeChild(b.firstChild);
+}
+function sendChat() {
+  const v = $('chatInput').value.trim(); if (!v) return;
+  if (!dataConn || !dataConn.open) return modAlert('Aún no estás conectado con nadie.');
+  send({ t: 'msg', v: v.slice(0, 200) }); addChat(v, true); $('chatInput').value = '';
+}
+$('chatInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
+function floatEmoji(e) {
+  const el = document.createElement('div'); el.className = 'floating-emoji'; el.innerText = e;
+  el.style.right = (24 + Math.random() * 40) + 'px'; $('swipeArea').appendChild(el); setTimeout(() => el.remove(), 1800);
+}
+function sendEmoji(e) { if (e === '👎') modAlert('⚠️ Has enviado un reporte de contenido no deseado.'); floatEmoji(e); send({ t: 'emoji', v: e }); }
+
+window.addEventListener('pagehide', () => { if (myId && sb) sb.from('active_users').delete().eq('id', myId); });
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>
