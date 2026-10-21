@@ -3,38 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bliz - Videochat</title>
+    <title>Bliz - Video Chat</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; background: #111827; color: white; margin: 0; display: flex; flex-direction: column; height: 100vh; text-align: center; }
-        .grid { display: flex; flex: 1; background: #000; position: relative; }
-        .box { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; border: 1px solid #1f2937; }
-        video { width: 100%; height: 100%; object-fit: cover; }
-        .status { position: absolute; background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 20px; }
-        .controls { background: #1f2937; padding: 20px; }
-        button { background: #10b981; color: white; border: none; padding: 12px 30px; font-size: 1rem; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        body { font-family: Arial, sans-serif; background: #0f172a; color: #f8fafc; text-align: center; margin: 0; padding: 10px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
+        h2 { margin: 10px 0; font-size: 1.2rem; }
+        .container { display: flex; flex: 1; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; }
+        .video-box { background: #1e293b; padding: 10px; border-radius: 12px; position: relative; width: 45%; min-width: 280px; height: 60vh; display: flex; justify-content: center; align-items: center; }
+        video { width: 100%; height: 100%; background: #000; border-radius: 8px; object-fit: cover; }
+        .label { position: absolute; bottom: 20px; left: 20px; background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 4px; font-size: 0.9rem; }
+        .controls { padding: 15px; }
+        button { background: #10b981; color: white; border: none; padding: 12px 25px; font-size: 1rem; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #059669; }
     </style>
 </head>
 <body>
     <h2>Bliz Video Chat</h2>
-    <div class="grid">
-        <div class="box">
+    
+    <div class="container">
+        <div class="video-box">
             <video id="local-video" autoplay muted playsinline></video>
-            <div class="status" style="bottom: 10px; left: 10px;">Tú</div>
+            <div class="label">Tú</div>
         </div>
-        <div class="box">
+        <div class="video-box">
             <video id="remote-video" autoplay playsinline></video>
-            <div id="loader" class="status">🔍 Buscando persona aleatoria...</div>
+            <div id="loader" class="label">🔍 Buscando...</div>
         </div>
     </div>
+
     <div class="controls">
         <button onclick="buscarPersona()">⏭️ Siguiente</button>
     </div>
 
     <script>
         const SUPABASE_URL = 'https://zcdgnzbegusizsxozfrr.supabase.co';
-        const SUPABASE_KEY = 'TU_PUBLISHABLE_KEY_AQUI'; // Pega tu clave real
+        const SUPABASE_KEY = 'TU_PUBLISHABLE_KEY_AQUI'; // Pega aquí tu clave real de Supabase
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let localStream, peer, myPeerId;
@@ -44,7 +48,7 @@
                 localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 document.getElementById('local-video').srcObject = localStream;
             } catch (e) {
-                alert("Permite el uso de cámara y micrófono.");
+                alert("Debes permitir el uso de la cámara y el micrófono.");
             }
 
             peer = new Peer();
