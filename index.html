@@ -55,10 +55,11 @@ html, body {
     <div class="text-3xl font-black bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent select-none">⚡ BLIZ</div>
     <p class="text-[11px] text-gray-400">Plataforma de Videochat P2P Segura (+18)</p>
 
+    <!-- Campos de fecha sin valores predefinidos (vacíos para que el usuario los escriba) -->
     <div class="flex gap-2 justify-center">
-      <input type="text" id="inputDay" placeholder="Día" maxlength="2" inputmode="numeric" class="w-1/4 p-2 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none" value="15">
-      <input type="text" id="inputMonth" placeholder="Mes" maxlength="2" inputmode="numeric" class="w-1/4 p-2 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none" value="06">
-      <input type="text" id="inputYear" placeholder="Año" maxlength="4" inputmode="numeric" class="w-2/4 p-2 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none" value="2000">
+      <input type="text" id="inputDay" placeholder="Día" maxlength="2" inputmode="numeric" class="w-1/4 p-2 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none">
+      <input type="text" id="inputMonth" placeholder="Mes" maxlength="2" inputmode="numeric" class="w-1/4 p-2 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none">
+      <input type="text" id="inputYear" placeholder="Año" maxlength="4" inputmode="numeric" class="w-2/4 p-2 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none">
     </div>
 
     <div class="flex items-center gap-2 text-left bg-gray-950 p-2.5 rounded-xl border border-gray-800">
@@ -94,7 +95,7 @@ html, body {
   </div>
 </header>
 
-<!-- BARRA DE FILTROS (ACTUALIZADA: MI GÉNERO) -->
+<!-- BARRA DE FILTROS -->
 <div class="flex-none flex items-center justify-between gap-2 px-3 py-1.5 bg-[#131B2A] border-b border-gray-800">
   <div class="flex flex-1 items-center gap-1.5">
     <span class="text-[11px] text-gray-400 font-semibold whitespace-nowrap">🌐 País:</span>
@@ -222,11 +223,17 @@ document.getElementById('btnStartApp').onclick = function() {
         return;
     }
 
-    // Verificación de edad obligatoria requerida por Google Play
+    const dayVal = document.getElementById('inputDay').value.trim();
+    const monthVal = document.getElementById('inputMonth').value.trim();
     const yearVal = parseInt(document.getElementById('inputYear').value, 10);
     const currentYear = new Date().getFullYear();
+
+    if (!dayVal || !monthVal || isNaN(yearVal)) {
+        alert("Por favor, introduce tu fecha de nacimiento completa.");
+        return;
+    }
     
-    if (isNaN(yearVal) || yearVal < 1900 || yearVal > currentYear) {
+    if (yearVal < 1900 || yearVal > currentYear) {
         alert("Por favor, introduce un año de nacimiento válido.");
         return;
     }
