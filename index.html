@@ -7,9 +7,9 @@
 <meta name="theme-color" content="#0B0F19">
 <title>Bliz - Videochat Global</title>
 
-<!-- Tailwind CSS CDN -->
+<!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
-<!-- PeerJS CDN -->
+<!-- PeerJS -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
 <style>
@@ -37,30 +37,45 @@ html, body {
 </head>
 <body class="flex flex-col h-[100dvh] w-full bg-[#0B0F19]">
 
-<!-- PANTALLA INICIAL MEDIANTE FORMULARIO HTML NATIVO -->
+<!-- PANTALLA INICIAL (+18 Y LECTURA DE TÉRMINOS) -->
 <div id="authScreen" class="fixed inset-0 bg-[#0B0F19] z-50 flex flex-col justify-center items-center p-5 overflow-y-auto">
-  <form onsubmit="handleEnter(event)" class="w-full max-w-sm bg-gray-900 border border-gray-800 rounded-3xl p-6 flex flex-col gap-4 text-center shadow-2xl">
+  <div class="w-full max-w-sm bg-gray-900 border border-gray-800 rounded-3xl p-6 flex flex-col gap-4 text-center shadow-2xl">
     <div class="text-4xl font-black bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent select-none">⚡ BLIZ</div>
     <p class="text-xs text-gray-400">Plataforma de Videochat P2P Segura (+18)</p>
 
+    <!-- INPUTS DE FECHA DE NACIMIENTO -->
     <div class="flex gap-2 justify-center">
       <input type="text" id="inputDay" placeholder="Día" maxlength="2" inputmode="numeric" class="w-1/4 p-2.5 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none" value="15">
       <input type="text" id="inputMonth" placeholder="Mes" maxlength="2" inputmode="numeric" class="w-1/4 p-2.5 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none" value="06">
       <input type="text" id="inputYear" placeholder="Año" maxlength="4" inputmode="numeric" class="w-2/4 p-2.5 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none" value="2000">
     </div>
 
-    <div class="flex items-center justify-center gap-2 bg-gray-950 p-2.5 rounded-xl border border-gray-800">
-      <input type="checkbox" id="acceptCheck" checked class="w-4 h-4 accent-cyan-500">
-      <label for="acceptCheck" class="text-[10px] text-gray-300">Acepto Términos y Privacidad (+18)</label>
+    <!-- CASILLA DE ACEPTACIÓN CON ENLACES A VENTANA MODAL -->
+    <div class="flex items-start gap-2 text-left bg-gray-950 p-3 rounded-xl border border-gray-800">
+      <input type="checkbox" id="acceptCheck" checked class="mt-0.5 w-4 h-4 accent-cyan-500 cursor-pointer">
+      <label for="acceptCheck" class="text-[10px] text-gray-300 leading-tight cursor-pointer">
+        Soy mayor de edad (+18) y acepto las 
+        <span class="text-cyan-400 underline font-semibold" onclick="openLegalModal('terms')">Condiciones de Uso</span> 
+        y la <span class="text-cyan-400 underline font-semibold" onclick="openLegalModal('privacy')">Privacidad</span>.
+      </label>
     </div>
 
-    <button type="submit" class="w-full py-3.5 rounded-full font-bold text-white bg-gradient-to-r from-purple-600 to-cyan-500 hover:opacity-90 active:scale-95 transition shadow-lg cursor-pointer">
+    <button onclick="enterAppDirectly()" class="w-full py-3.5 rounded-full font-bold text-white bg-gradient-to-r from-purple-600 to-cyan-500 hover:opacity-90 active:scale-95 transition shadow-lg cursor-pointer">
       Entrar a Bliz
     </button>
-  </form>
+  </div>
 </div>
 
-<!-- HEADER CON CONTADOR ONLINE -->
+<!-- VENTANA MODAL PARA LEER TÉRMINOS Y PRIVACIDAD -->
+<div id="legalModal" class="hidden fixed inset-0 bg-black/90 z-50 p-5 flex-col justify-center items-center">
+  <div class="w-full max-w-sm bg-gray-900 border border-gray-800 rounded-2xl p-5 flex flex-col gap-3">
+    <h3 id="legalTitle" class="text-sm font-bold text-cyan-400"></h3>
+    <div id="legalContent" class="text-xs text-gray-300 max-h-60 overflow-y-auto leading-relaxed border-t border-b border-gray-800 py-3"></div>
+    <button onclick="closeLegalModal()" class="w-full py-2 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl text-xs">Entendido</button>
+  </div>
+</div>
+
+<!-- HEADER PRINCIPAL DE LA APP -->
 <header class="flex-none flex justify-between items-center px-4 py-2.5 bg-gray-900 border-b border-gray-800">
   <div class="flex items-center gap-2">
     <div class="text-xl font-black bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">⚡ BLIZ</div>
@@ -87,7 +102,7 @@ html, body {
   </div>
 </div>
 
-<!-- CONTENEDOR PRINCIPAL DE VÍDEO -->
+<!-- INTERFAZ PRINCIPAL DE VÍDEO -->
 <main class="flex-1 flex flex-col min-h-0 relative p-2 gap-2">
   <div id="swipeArea" class="flex-1 min-h-0 relative bg-black rounded-2xl overflow-hidden border border-gray-800 flex justify-center items-center">
     
@@ -98,7 +113,7 @@ html, body {
       <p class="mt-2 text-xs font-medium">Buscando usuario en línea...</p>
     </div>
 
-    <!-- CONTROLES CÁMARA -->
+    <!-- CONTROLES FLOTANTES -->
     <div class="absolute top-2.5 left-2.5 flex flex-col gap-2 z-20">
       <button id="btnMic" class="w-8 h-8 rounded-full bg-gray-900/80 border border-white/20 text-white flex justify-center items-center text-xs backdrop-blur">🎤</button>
       <button id="btnCam" class="w-8 h-8 rounded-full bg-gray-900/80 border border-white/20 text-white flex justify-center items-center text-xs backdrop-blur">📹</button>
@@ -133,59 +148,11 @@ html, body {
 let localStream = null;
 let peer = null;
 
-// FUNCIÓN NATIVA VINCULADA AL FORMULARIO
-function handleEnter(event) {
-    event.preventDefault(); // Evita que recargue la página
-    
-    // Ocultar pantalla de acceso al instante
-    var screen = document.getElementById('authScreen');
-    if (screen) {
-        screen.style.display = 'none';
-        screen.remove(); // Lo elimina del DOM para liberar memoria
-    }
+// MOSTRAR TÉRMINOS Y PRIVACIDAD EN MODAL
+function openLegalModal(type) {
+    const modal = document.getElementById('legalModal');
+    const title = document.getElementById('legalTitle');
+    const content = document.getElementById('legalContent');
 
-    // Activar cámara del móvil
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: true })
-        .then(function(stream) {
-            localStream = stream;
-            var selfVid = document.getElementById('selfCamera');
-            if(selfVid) selfVid.srcObject = stream;
-        })
-        .catch(function(err) {
-            console.log("Permiso de cámara denegado o error:", err);
-        });
-    }
-
-    // Iniciar red P2P PeerJS
-    if (typeof Peer !== 'undefined') {
-        try {
-            peer = new Peer({
-                config: {
-                    iceServers: [
-                        { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' }
-                    ]
-                }
-            });
-        } catch(e) {
-            console.log("PeerJS error:", e);
-        }
-    }
-}
-
-document.getElementById('nextBtn').onclick = function() {
-    var remote = document.getElementById('remoteVideo');
-    if(remote) remote.srcObject = null;
-    var search = document.getElementById('searchState');
-    if(search) search.style.display = 'block';
-    setTimeout(function() {
-        if(search) search.style.display = 'none';
-    }, 1500);
-};
-
-document.getElementById('blockBtn').onclick = function() { alert("Usuario bloqueado."); };
-document.getElementById('reportBtn').onclick = function() { alert("Reporte enviado."); };
-</script>
-</body>
-</html>
+    if (type === 'terms') {
+        title.
