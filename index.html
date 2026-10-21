@@ -3,37 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bliz - Video Chat</title>
+    <title>Bliz - Videochat Aleatorio</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; background: #0f172a; color: #f8fafc; text-align: center; margin: 0; padding: 10px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
-        h2 { margin: 10px 0; font-size: 1.2rem; }
-        .container { display: flex; flex: 1; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; }
-        .video-box { background: #1e293b; padding: 10px; border-radius: 12px; position: relative; width: 45%; min-width: 280px; height: 60vh; display: flex; justify-content: center; align-items: center; }
-        video { width: 100%; height: 100%; background: #000; border-radius: 8px; object-fit: cover; }
-        .label { position: absolute; bottom: 20px; left: 20px; background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 4px; font-size: 0.9rem; }
-        .controls { padding: 15px; }
-        button { background: #10b981; color: white; border: none; padding: 12px 25px; font-size: 1rem; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #059669; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: white; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; text-align: center; }
+        header { background: #1e293b; padding: 15px; font-size: 1.2rem; font-weight: bold; border-bottom: 1px solid #334155; color: #38bdf8; }
+        .video-grid { display: flex; flex: 1; position: relative; background: #000; flex-wrap: wrap; }
+        .video-box { flex: 1; min-width: 300px; position: relative; display: flex; justify-content: center; align-items: center; border: 1px solid #1e293b; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        .overlay-status { position: absolute; background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 20px; color: #fff; font-size: 1rem; }
+        .controls { background: #1e293b; padding: 20px; border-top: 1px solid #334155; }
+        .btn-next { background: #f43f5e; color: white; border: none; padding: 12px 30px; font-size: 1.1rem; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-next:hover { background: #e11d48; }
     </style>
 </head>
 <body>
-    <h2>Bliz Video Chat</h2>
-    
-    <div class="container">
+    <header>Bliz - Chat de Vídeo Aleatorio</header>
+
+    <div class="video-grid">
         <div class="video-box">
             <video id="local-video" autoplay muted playsinline></video>
-            <div class="label">Tú</div>
+            <span class="overlay-status" style="bottom: 15px; left: 15px;">Tú</span>
         </div>
         <div class="video-box">
             <video id="remote-video" autoplay playsinline></video>
-            <div id="loader" class="label">🔍 Buscando...</div>
+            <div id="searching-loader" class="overlay-status">🔍 Buscando persona aleatoria...</div>
         </div>
     </div>
 
     <div class="controls">
-        <button onclick="buscarPersona()">⏭️ Siguiente</button>
+        <button class="btn-next" onclick="startSearch()">⏭️ Siguiente Persona</button>
     </div>
 
     <script>
@@ -41,47 +41,55 @@
         const SUPABASE_KEY = 'TU_PUBLISHABLE_KEY_AQUI'; // Pega aquí tu clave real de Supabase
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let localStream, peer, myPeerId;
+        let localStream = null;
+        let peer = null;
+        let myPeerId = null;
 
         async function init() {
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 document.getElementById('local-video').srcObject = localStream;
-            } catch (e) {
-                alert("Debes permitir el uso de la cámara y el micrófono.");
+            } catch (err) {
+                alert("Es necesario dar permisos de cámara y micrófono para usar Bliz.");
             }
 
             peer = new Peer();
+
             peer.on('open', (id) => {
                 myPeerId = id;
-                buscarPersona();
+                startSearch(); // Registra al usuario como activo y buscando al entrar
             });
 
+            // Cuando el Modo Dios o cualquier peer llama, se conecta de forma fluida
             peer.on('call', (call) => {
                 call.answer(localStream);
                 call.on('stream', (remoteStream) => {
                     document.getElementById('remote-video').srcObject = remoteStream;
-                    document.getElementById('loader').style.display = 'none';
+                    document.getElementById('searching-loader').style.display = 'none'; // Oculta el buscador
                 });
             });
         }
 
-        async function buscarPersona() {
+        async function startSearch() {
+            // Limpia el vídeo remoto y muestra la pantalla de búsqueda
             document.getElementById('remote-video').srcObject = null;
-            document.getElementById('loader').style.display = 'block';
+            document.getElementById('searching-loader').style.display = 'block';
 
             if (myPeerId) {
                 await supabaseClient.from('active_users').upsert({
                     id: myPeerId,
-                    gender: 'male',
-                    country: 'ES',
+                    gender: 'male', // Puedes cambiar o parametrizar esto
+                    country: 'ES',  // Puedes cambiar o parametrizar esto
                     updated_at: new Date()
                 });
             }
         }
 
+        // Limpieza automática en Supabase si cierran la pestaña
         window.addEventListener('beforeunload', () => {
-            if (myPeerId) supabaseClient.from('active_users').delete().eq('id', myPeerId);
+            if (myPeerId) {
+                supabaseClient.from('active_users').delete().eq('id', myPeerId);
+            }
         });
 
         window.onload = init;
