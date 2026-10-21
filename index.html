@@ -38,7 +38,7 @@
 
     <script>
         const SUPABASE_URL = 'https://zcdgnzbegusizsxozfrr.supabase.co';
-        const SUPABASE_KEY = 'TU_PUBLISHABLE_KEY_AQUI'; // Pega aquí tu clave real de Supabase
+        const SUPABASE_KEY = 'TU_PUBLISHABLE_KEY_AQUI'; // Pega aquí tu Publishable key real de Supabase
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let localStream = null;
@@ -57,35 +57,32 @@
 
             peer.on('open', (id) => {
                 myPeerId = id;
-                startSearch(); // Registra al usuario como activo y buscando al entrar
+                startSearch();
             });
 
-            // Cuando el Modo Dios o cualquier peer llama, se conecta de forma fluida
             peer.on('call', (call) => {
                 call.answer(localStream);
                 call.on('stream', (remoteStream) => {
                     document.getElementById('remote-video').srcObject = remoteStream;
-                    document.getElementById('searching-loader').style.display = 'none'; // Oculta el buscador
+                    document.getElementById('searching-loader').style.display = 'none';
                 });
             });
         }
 
         async function startSearch() {
-            // Limpia el vídeo remoto y muestra la pantalla de búsqueda
             document.getElementById('remote-video').srcObject = null;
             document.getElementById('searching-loader').style.display = 'block';
 
             if (myPeerId) {
                 await supabaseClient.from('active_users').upsert({
                     id: myPeerId,
-                    gender: 'male', // Puedes cambiar o parametrizar esto
-                    country: 'ES',  // Puedes cambiar o parametrizar esto
+                    gender: 'male',
+                    country: 'ES',
                     updated_at: new Date()
                 });
             }
         }
 
-        // Limpieza automática en Supabase si cierran la pestaña
         window.addEventListener('beforeunload', () => {
             if (myPeerId) {
                 supabaseClient.from('active_users').delete().eq('id', myPeerId);
