@@ -18,9 +18,25 @@
         .admin-container { display: flex; gap: 20px; margin-top: 30px; flex-wrap: wrap; }
         .video-box { background: #1e293b; padding: 15px; border-radius: 12px; }
         video { width: 320px; height: 240px; background: #000; border-radius: 8px; object-fit: cover; }
+        
+        /* Pantalla de Login */
+        #loginOverlay { position: fixed; inset: 0; background: #0f172a; display: flex; align-items: center; justify-content: center; z-index: 999; }
+        .login-card { background: #1e293b; padding: 25px; border-radius: 12px; text-align: center; border: 1px solid #334155; width: 300px; }
+        .login-card input { width: 100%; padding: 10px; margin: 15px 0; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; text-align: center; box-sizing: border-box; }
     </style>
 </head>
 <body>
+
+    <!-- BLOQUE DE AUTENTICACIÓN -->
+    <div id="loginOverlay">
+        <div class="login-card">
+            <h2>⚡ Acceso Admin</h2>
+            <p style="font-size: 0.8rem; color: #94a3b8;">Introduce la clave para acceder al Modo Dios</p>
+            <input type="password" id="adminPassword" placeholder="Contraseña">
+            <button onclick="checkPassword()" style="width: 100%; py: 10px;">Entrar</button>
+        </div>
+    </div>
+
     <h1>⚡ Panel de Control - Modo Dios (Admin)</h1>
 
     <div class="filters">
@@ -66,12 +82,32 @@
     </div>
 
     <script>
+        // CONTRASEÑA DE ACCESO AL PANEL (Cámbiala aquí si quieres)
+        const SECRET_PASS = "admin1234";
+
         const SUPABASE_URL = 'https://zcdgnzbegusizsxozfrr.supabase.co';
-        const SUPABASE_KEY = 'TU_PUBLISHABLE_KEY_AQUI'; // Asegúrate de poner tu clave real si difiere
+        const SUPABASE_KEY = 'TU_PUBLISHABLE_KEY_AQUI'; 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let peer = null;
         let adminStream = null;
+
+        function checkPassword() {
+            const input = document.getElementById('adminPassword').value;
+            if (input === SECRET_PASS) {
+                document.getElementById('loginOverlay').style.display = 'none';
+                startAdminPanel();
+            } else {
+                alert("Contraseña incorrecta");
+            }
+        }
+
+        async function startAdminPanel() {
+            await initAdminMedia();
+            initAdminPeer();
+            loadActiveUsers();
+            setInterval(loadActiveUsers, 5000);
+        }
 
         async function initAdminMedia() {
             try {
@@ -90,4 +126,60 @@
             });
         }
 
-        async function loadActive
+        async function loadActiveUsers() {
+            let query = supabaseClient.from('active_users').select('*');
+
+            const gender = document.getElementById('filter-gender').value;
+            const country = document.getElementById('filter-country').value.trim();
+
+            if (gender) query = query.eq('gender', gender);
+            if (country) query = query.ilike('country', `%${country}%`);
+
+            const { data, error } = await query;
+            const tbody = document.getElementById('users-table-body');
+            tbody.innerHTML = '';
+
+            if (error) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #f43f5e;">Error al consultar la base de datos.</td></tr>`;
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">No hay usuarios activos en este momento.</td></tr>`;
+                return;
+            }
+
+            data.forEach(user => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${user.id.substring(0, 8)}...</td>
+                    <td>${user.gender}</td>
+                    <td>${user.country}</td>
+                    <td>${new Date(user.updated_at).toLocaleTimeString()}</td>
+                    <td><button onclick="interveneUser('${user.id}')">📞 Intervenir</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function interveneUser(targetId) {
+            if (!adminStream) {
+                alert("La cámara del administrador no está lista todavía.");
+                return;
+            }
+
+            console.log(`Iniciando intervención con el usuario: ${targetId}`);
+            const call = peer.call(targetId, adminStream);
+
+            call.on('stream', (remoteStream) => {
+                document.getElementById('admin-remote').srcObject = remoteStream;
+            });
+
+            call.on('error', (err) => {
+                console.error("Error en la llamada de intervención:", err);
+                alert("No se pudo conectar con el usuario.");
+            });
+        }
+    </script>
+</body>
+</html>
