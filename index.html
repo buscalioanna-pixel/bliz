@@ -37,29 +37,27 @@ html, body {
 </head>
 <body class="flex flex-col h-[100dvh] w-full bg-[#0B0F19]">
 
-<!-- PANTALLA INICIAL (+18 Y CHECKBOX DE TÉRMINOS) -->
+<!-- PANTALLA INICIAL (+18) -->
 <div id="authScreen" class="fixed inset-0 bg-[#0B0F19] z-50 flex flex-col justify-center items-center p-5 overflow-y-auto">
   <div class="w-full max-w-sm bg-gray-900 border border-gray-800 rounded-3xl p-6 flex flex-col gap-4 text-center shadow-2xl">
     <div id="secretLogoAuth" class="text-4xl font-black bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent cursor-pointer select-none">⚡ BLIZ</div>
     <p class="text-xs text-gray-400">Plataforma de Videochat P2P Segura (+18)</p>
 
     <div class="flex gap-2 justify-center">
-      <input type="text" id="inputDay" placeholder="Día" maxlength="2" inputmode="numeric" class="w-1/4 p-2.5 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none focus:border-cyan-500" value="15">
-      <input type="text" id="inputMonth" placeholder="Mes" maxlength="2" inputmode="numeric" class="w-1/4 p-2.5 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none focus:border-cyan-500" value="06">
-      <input type="text" id="inputYear" placeholder="Año" maxlength="4" inputmode="numeric" class="w-2/4 p-2.5 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none focus:border-cyan-500" value="2000">
+      <input type="text" id="inputDay" placeholder="Día" maxlength="2" inputmode="numeric" class="w-1/4 p-2.5 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none" value="15">
+      <input type="text" id="inputMonth" placeholder="Mes" maxlength="2" inputmode="numeric" class="w-1/4 p-2.5 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none" value="06">
+      <input type="text" id="inputYear" placeholder="Año" maxlength="4" inputmode="numeric" class="w-2/4 p-2.5 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none" value="2000">
     </div>
 
-    <!-- CASILLA DE VERIFICACIÓN (CHECKBOX) Y TÉRMINOS -->
-    <div class="flex items-start gap-2.5 text-left bg-gray-950/80 p-3 rounded-xl border border-gray-800">
-      <input type="checkbox" id="acceptTermsCheckbox" class="mt-0.5 w-4 h-4 rounded border-gray-700 text-cyan-500 focus:ring-0 accent-cyan-500 cursor-pointer">
-      <label for="acceptTermsCheckbox" class="text-[10px] text-gray-300 leading-tight cursor-pointer">
-        Confermo que soy mayor de edad (+18) y acepto los 
-        <span class="text-cyan-400 underline font-semibold" onclick="showTerms(event)">Términos de Uso</span> 
-        y la <span class="text-cyan-400 underline font-semibold" onclick="showPrivacy(event)">Política de Privacidad</span>.
-      </label>
+    <div class="flex items-center justify-center gap-2 bg-gray-950 p-2.5 rounded-xl border border-gray-800">
+      <input type="checkbox" id="acceptCheck" checked class="w-4 h-4 accent-cyan-500">
+      <label for="acceptCheck" class="text-[10px] text-gray-300">Acepto Términos y Privacidad (+18)</label>
     </div>
 
-    <button id="btnEnter" type="button" class="w-full py-3.5 rounded-full font-bold text-white bg-gradient-to-r from-purple-600 to-cyan-500 hover:opacity-90 active:scale-95 transition shadow-lg cursor-pointer">Entrar a Bliz</button>
+    <!-- BOTÓN CON EVENTO DIRECTO EN HTML -->
+    <button onclick="startApp()" class="w-full py-3.5 rounded-full font-bold text-white bg-gradient-to-r from-purple-600 to-cyan-500 hover:opacity-90 active:scale-95 transition shadow-lg cursor-pointer">
+      Entrar a Bliz
+    </button>
   </div>
 </div>
 
@@ -75,7 +73,7 @@ html, body {
   <div id="godBadge" class="hidden bg-red-950/60 text-red-400 border border-red-500 px-3 py-1 rounded-full text-xs font-bold cursor-pointer hover:bg-red-900/80">👑 MODO DIOS</div>
 </header>
 
-<!-- BARRA DE FILTROS DE BÚSQUEDA -->
+<!-- BARRA DE FILTROS -->
 <div class="flex-none flex items-center justify-between gap-2 px-3 py-1.5 bg-[#131B2A] border-b border-gray-800">
   <div class="flex flex-1 items-center gap-1.5">
     <span class="text-[11px] text-gray-400 font-semibold whitespace-nowrap">🌐 País:</span>
@@ -83,8 +81,6 @@ html, body {
       <option value="GLOBAL">🌍 Todos los países</option>
       <option value="ES">🇪🇸 España</option>
       <option value="MX">🇲🇽 México</option>
-      <option value="CO">🇨🇴 Colombia</option>
-      <option value="AR">🇦🇷 Argentina</option>
     </select>
   </div>
   <div class="flex flex-1 items-center gap-1.5">
@@ -97,6 +93,24 @@ html, body {
   </div>
 </div>
 
-<!-- CONTENEDOR PRINCIPAL DE VÍDEO -->
+<!-- CONTENEDOR PRINCIPAL -->
 <main class="flex-1 flex flex-col min-h-0 relative p-2 gap-2">
-  <div id="swipeArea" class="flex-1 min-h-0 relative bg-black rounded-2xl overflow-hidden border border-gray-800 flex justify-center
+  <div id="swipeArea" class="flex-1 min-h-0 relative bg-black rounded-2xl overflow-hidden border border-gray-800 flex justify-center items-center">
+    
+    <video id="remoteVideo" autoplay playsinline class="absolute inset-0 w-full h-full object-cover z-0 bg-gray-950"></video>
+
+    <div id="searchState" class="z-10 text-center text-gray-400 pointer-events-none">
+      <div class="text-4xl animate-bounce">🔍</div>
+      <p class="mt-2 text-xs font-medium">Buscando usuario en línea...</p>
+      <p class="text-[10px] text-gray-500 mt-1">Desliza hacia arriba para omitir</p>
+    </div>
+
+    <!-- CONTROLES CÁMARA -->
+    <div class="absolute top-2.5 left-2.5 flex flex-col gap-2 z-20">
+      <button id="btnMic" class="w-8 h-8 rounded-full bg-gray-900/80 border border-white/20 text-white flex justify-center items-center text-xs backdrop-blur">🎤</button>
+      <button id="btnCam" class="w-8 h-8 rounded-full bg-gray-900/80 border border-white/20 text-white flex justify-center items-center text-xs backdrop-blur">📹</button>
+      <button id="btnFlipCam" class="w-8 h-8 rounded-full bg-gray-900/80 border border-white/20 text-white flex justify-center items-center text-xs backdrop-blur">🔄</button>
+      <button id="btnBeauty" class="w-8 h-8 rounded-full bg-gray-900/80 border border-white/20 text-white flex justify-center items-center text-xs backdrop-blur">✨</button>
+    </div>
+
+    <video id="selfCamera" autoplay playsinline muted class="absolute top-2.5 right-2.5 w-20 h-28 object-cover bg-gray-900 rounded-xl border-2 border-purple-500 z-20 transition-all"></video>
