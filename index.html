@@ -33,7 +33,6 @@ html, body {
   0% { opacity: 1; transform: translateY(0) scale(1); }
   100% { opacity: 0; transform: translateY(-130px) scale(1.5); }
 }
-/* Animación para el banner de moderación */
 @keyframes slideDown {
   0% { transform: translateY(-100%); opacity: 0; }
   100% { transform: translateY(0); opacity: 1; }
@@ -45,7 +44,7 @@ html, body {
 </head>
 <body class="flex flex-col h-[100dvh] w-full bg-[#0B0F19]">
 
-<!-- BANNER DE ALERTA DE MODERACIÓN (OCULTO POR DEFECTO) -->
+<!-- BANNER DE ALERTA DE MODERACIÓN -->
 <div id="modBanner" class="hidden fixed top-0 left-0 right-0 z-50 bg-red-600/95 text-white text-xs px-4 py-2.5 text-center font-bold shadow-lg backdrop-blur animate-slide-down flex items-center justify-center gap-2">
   <span>⚠️</span> <span id="modBannerText">Aviso de Moderación: Comportamiento inadecuado detectado.</span>
 </div>
@@ -95,12 +94,12 @@ html, body {
   </div>
 </header>
 
-<!-- BARRA DE FILTROS -->
+<!-- BARRA DE FILTROS (ACTUALIZADA: MI GÉNERO) -->
 <div class="flex-none flex items-center justify-between gap-2 px-3 py-1.5 bg-[#131B2A] border-b border-gray-800">
   <div class="flex flex-1 items-center gap-1.5">
     <span class="text-[11px] text-gray-400 font-semibold whitespace-nowrap">🌐 País:</span>
     <select id="countrySelect" class="flex-1 p-1 rounded-lg border border-gray-700 bg-[#0B0F19] text-white text-xs outline-none">
-      <option value="GLOBAL">🌍 Todos los países</option>
+      <option value="GLOBAL">🌍 Todos</option>
       <option value="ES">🇪🇸 España</option>
       <option value="MX">🇲🇽 México</option>
       <option value="CO">🇨🇴 Colombia</option>
@@ -108,11 +107,11 @@ html, body {
     </select>
   </div>
   <div class="flex flex-1 items-center gap-1.5">
-    <span class="text-[11px] text-gray-400 font-semibold whitespace-nowrap">👤 Buscar:</span>
-    <select id="genderSelect" class="flex-1 p-1 rounded-lg border border-gray-700 bg-[#0B0F19] text-white text-xs outline-none">
-      <option value="ALL">👫 Todos</option>
-      <option value="FEMALE">👩 Mujeres</option>
-      <option value="MALE">👨 Hombres</option>
+    <span class="text-[11px] text-gray-400 font-semibold whitespace-nowrap">👤 Mi Género:</span>
+    <select id="myGenderSelect" class="flex-1 p-1 rounded-lg border border-gray-700 bg-[#0B0F19] text-white text-xs outline-none">
+      <option value="MALE">👨 Hombre</option>
+      <option value="FEMALE">👩 Mujer</option>
+      <option value="GROUP">👥 Grupo</option>
     </select>
   </div>
 </div>
