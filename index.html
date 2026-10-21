@@ -7,6 +7,8 @@
 <meta name="theme-color" content="#0B0F19">
 <title>Bliz - Videochat Global</title>
 
+<!-- Supabase JS -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
 <!-- PeerJS -->
@@ -55,7 +57,7 @@ html, body {
     <div class="text-3xl font-black bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent select-none">⚡ BLIZ</div>
     <p class="text-[11px] text-gray-400">Plataforma de Videochat P2P Segura (+18)</p>
 
-    <!-- Campos de fecha sin valores predefinidos (vacíos para que el usuario los escriba) -->
+    <!-- Campos de fecha sin valores predefinidos -->
     <div class="flex gap-2 justify-center">
       <input type="text" id="inputDay" placeholder="Día" maxlength="2" inputmode="numeric" class="w-1/4 p-2 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none">
       <input type="text" id="inputMonth" placeholder="Mes" maxlength="2" inputmode="numeric" class="w-1/4 p-2 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none">
@@ -179,8 +181,14 @@ html, body {
 </main>
 
 <script>
+// Configuración de Supabase
+const SUPABASE_URL = 'https://zcdgnzbegusizsxozfrr.supabase.co';
+const SUPABASE_KEY = 'TU_PUBLISHABLE_KEY_AQUI'; // Reemplaza con tu clave real
+const supabaseClient = typeof supabase !== 'undefined' ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
 let localStream = null;
 let peer = null;
+let myPeerId = null;
 let activeCall = null;
 let currentFacingMode = 'user';
 let beautyOn = false;
@@ -272,6 +280,11 @@ function initPeerConnection() {
             }
         });
 
+        peer.on('open', id => {
+            myPeerId = id;
+            registerInSupabase(id);
+        });
+
         peer.on('call', call => {
             if (blockedPeers.includes(call.peer)) { call.close(); return; }
             activeCall = call;
@@ -283,6 +296,19 @@ function initPeerConnection() {
             });
         });
     }
+}
+
+async function registerInSupabase(id) {
+    if (!supabaseClient) return;
+    const country = document.getElementById('countrySelect').value;
+    const gender = document.getElementById('myGenderSelect').value;
+
+    await supabaseClient.from('active_users').upsert({
+        id: id,
+        gender: gender,
+        country: country,
+        updated_at: new Date()
+    });
 }
 
 function showRemoteCountry(flag, name) {
@@ -310,6 +336,10 @@ function nextUser() {
     document.getElementById('remoteVideo').srcObject = null;
     document.getElementById('remoteCountryBadge').style.display = 'none';
     document.getElementById('searchState').style.display = 'block';
+
+    if (myPeerId) {
+        registerInSupabase(myPeerId);
+    }
 
     setTimeout(() => {
         document.getElementById('searchState').style.display = 'none';
@@ -382,6 +412,12 @@ function sendEmoji(emoji) {
     document.getElementById('swipeArea').appendChild(el);
     setTimeout(() => el.remove(), 1800);
 }
+
+window.addEventListener('beforeunload', () => {
+    if (myPeerId && supabaseClient) {
+        supabaseClient.from('active_users').delete().eq('id', myPeerId);
+    }
+});
 </script>
 </body>
 </html>
