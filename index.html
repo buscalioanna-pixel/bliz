@@ -113,14 +113,14 @@ html, body {
     
     <video id="remoteVideo" autoplay playsinline class="absolute inset-0 w-full h-full object-cover z-0 bg-gray-950"></video>
 
-    <!-- ETIQUETA DE PAÍS DEL USUARIO REMOTO (ESTILO OMETV) -->
+    <!-- ETIQUETA DE PAÍS DEL USUARIO REMOTO -->
     <div id="remoteCountryBadge" class="hidden absolute top-3 left-3 bg-black/60 backdrop-blur-md border border-white/20 text-white px-3 py-1 rounded-full text-xs font-semibold z-20 flex items-center gap-1.5">
       <span id="remoteFlag">🌍</span> <span id="remoteCountryName">Cargando...</span>
     </div>
 
     <div id="searchState" class="z-10 text-center text-gray-400 pointer-events-none">
       <div class="text-4xl animate-bounce">🔍</div>
-      <p class="mt-2 text-xs font-medium">Buscando usuario en línea...</p>
+      <p class="mt-2 text-xs font-medium" id="searchText">Buscando usuario en línea...</p>
       <p class="text-[10px] text-gray-500 mt-1">Desliza hacia arriba o toca Siguiente</p>
     </div>
 
@@ -170,17 +170,7 @@ let activeCall = null;
 let currentFacingMode = 'user';
 let beautyOn = false;
 let blockedPeers = [];
-
-// Detectar país del usuario actual mediante IP o zona horaria como respaldo
-let userCountry = "ES";
-let userFlag = "🇪🇸";
-try {
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (tz.includes("Madrid")) { userCountry = "ES"; userFlag = "🇪🇸"; }
-    else if (tz.includes("Mexico")) { userCountry = "MX"; userFlag = "🇲🇽"; }
-    else if (tz.includes("Bogota")) { userCountry = "CO"; userFlag = "🇨🇴"; }
-    else if (tz.includes("Buenos_Aires")) { userCountry = "AR"; userFlag = "🇦🇷"; }
-} catch(e) {}
+let lastSkipTime = 0; // Control Anti-Spam
 
 function openLegalModal(type) {
     const modal = document.getElementById('legalModal');
@@ -227,7 +217,6 @@ function enterAppDirectly() {
 
 function initPeerConnection() {
     if (typeof Peer !== 'undefined') {
-        // Creamos ID único combinando el país para identificarlo
         peer = new Peer({
             config: {
                 iceServers: [
@@ -241,18 +230,10 @@ function initPeerConnection() {
             if (blockedPeers.includes(call.peer)) { call.close(); return; }
             activeCall = call;
             call.answer(localStream);
-            
-            // Enviar nuestro país al contestar
-            setTimeout(() => {
-                call.peerConnection.createDataChannel?.("metadata");
-            }, 500);
-
             call.on('stream', remoteStream => {
                 document.getElementById('remoteVideo').srcObject = remoteStream;
                 document.getElementById('searchState').style.display = 'none';
-                
-                // Mostrar insignia de país simulada o recibida
-                showRemoteCountry("🌍 Conectado", "Global");
+                showRemoteCountry("🌍", "Conectado");
                 try { if (navigator.vibrate) navigator.vibrate(100); } catch(e){}
             });
         });
@@ -266,6 +247,18 @@ function showRemoteCountry(flag, name) {
 }
 
 function nextUser() {
+    // Control Anti-Spam: Evitar clics en menos de 1.2 segundos
+    const now = Date.now();
+    if (now - lastSkipTime < 1200) {
+        document.getElementById('searchText').innerText = "Por favor, ve más despacio...";
+        document.getElementById('searchState').style.display = 'block';
+        setTimeout(() => {
+            document.getElementById('searchText').innerText = "Buscando usuario en línea...";
+        }, 1000);
+        return;
+    }
+    lastSkipTime = now;
+
     if (activeCall) {
         activeCall.close();
         activeCall = null;
@@ -276,7 +269,6 @@ function nextUser() {
 
     setTimeout(() => {
         document.getElementById('searchState').style.display = 'none';
-        // Simulación de encuentro con país aleatorio para pruebas visuales fluidas
         const randomCountries = [
             { flag: "🇪🇸", name: "España" },
             { flag: "🇲🇽", name: "México" },
@@ -310,6 +302,7 @@ document.getElementById('btnCam').onclick = function() {
 
 document.getElementById('btnFlipCam').onclick = function() {
     currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+    if (localStream) localStream.getTracks().headers = []; // limpiar
     if (localStream) localStream.getTracks().forEach(t => t.stop());
     
     navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode }, audio: true })
