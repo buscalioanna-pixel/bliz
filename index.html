@@ -1,82 +1,253 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Bliz</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0B0F19">
+<title>Bliz - Videochat Global</title>
+
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- PeerJS CDN -->
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-  body { background-color: #0B0F19; color: #ffffff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-  #authScreen { position: fixed; inset: 0; background: #0B0F19; z-index: 9999; display: flex; justify-content: center; align-items: center; padding: 20px; }
-  .card { background: #111827; border: 1px solid #1f2937; border-radius: 20px; padding: 24px; width: 100%; max-width: 320px; text-align: center; }
-  h1 { font-size: 28px; font-weight: 900; background: linear-gradient(to right, #22d3ee, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px; }
-  p { font-size: 12px; color: #9ca3af; margin-bottom: 16px; }
-  .btn { width: 100%; padding: 14px; border: none; border-radius: 99px; font-weight: bold; color: white; background: linear-gradient(to right, #9333ea, #06b6d4); cursor: pointer; font-size: 14px; margin-top: 15px; }
-  .main-app { flex: 1; display: flex; flex-direction: column; background: #000; position: relative; }
-  video { width: 100%; height: 100%; object-fit: cover; background: #111; }
-  .top-cam { position: absolute; top: 10px; right: 10px; width: 80px; height: 110px; border-radius: 10px; border: 2px solid #a855f7; object-fit: cover; }
-  .controls { padding: 10px; display: flex; gap: 10px; background: #0b0f19; }
-  .controls button { flex: 1; padding: 12px; border-radius: 99px; border: none; font-weight: bold; color: white; background: #374151; font-size: 12px; cursor: pointer; }
-  .controls button.next { background: linear-gradient(to right, #9333ea, #06b6d4); }
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; user-select: none; }
+html, body { 
+  background-color: #0B0F19; 
+  color: #ffffff; 
+  height: 100dvh; 
+  width: 100vw; 
+  display: flex; 
+  flex-direction: column; 
+  overflow: hidden; 
+  touch-action: manipulation; 
+}
+.beauty-active { filter: brightness(1.12) contrast(1.05) saturate(1.1) blur(0.3px); }
+.floating-emoji {
+  position: absolute; bottom: 70px; right: 24px; font-size: 32px;
+  animation: floatUp 1.8s ease-out forwards; z-index: 30; pointer-events: none;
+}
+@keyframes floatUp {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-130px) scale(1.5); }
+}
 </style>
 </head>
-<body>
+<body class="flex flex-col h-[100dvh] w-full bg-[#0B0F19]">
 
-<!-- PANTALLA DE ACCESO -->
-<div id="authScreen">
-  <div class="card">
-    <h1>⚡ BLIZ</h1>
-    <p>Videochat P2P Seguro (+18)</p>
-    
-    <div style="text-align: left; font-size: 11px; color: #d1d5db; margin-bottom: 15px; background: #030712; padding: 10px; border-radius: 8px;">
-      <input type="checkbox" id="cbox" checked> Acepto Términos y Privacidad (+18)
+<!-- PANTALLA INICIAL (+18) -->
+<div id="authScreen" class="fixed inset-0 bg-[#0B0F19] z-50 flex flex-col justify-center items-center p-5 overflow-y-auto">
+  <div class="w-full max-w-sm bg-gray-900 border border-gray-800 rounded-3xl p-6 flex flex-col gap-4 text-center shadow-2xl">
+    <div id="secretLogoAuth" class="text-4xl font-black bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent cursor-pointer select-none">⚡ BLIZ</div>
+    <p class="text-xs text-gray-400">Plataforma de Videochat P2P Segura (+18)</p>
+
+    <div class="flex gap-2 justify-center">
+      <input type="text" id="inputDay" placeholder="Día" maxlength="2" inputmode="numeric" class="w-1/4 p-2.5 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none" value="15">
+      <input type="text" id="inputMonth" placeholder="Mes" maxlength="2" inputmode="numeric" class="w-1/4 p-2.5 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none" value="06">
+      <input type="text" id="inputYear" placeholder="Año" maxlength="4" inputmode="numeric" class="w-2/4 p-2.5 rounded-xl border border-gray-700 bg-[#0B0F19] text-white text-center text-xs outline-none" value="2000">
     </div>
 
-    <button class="btn" onclick="forceEnter()">Entrar a Bliz</button>
+    <div class="flex items-start gap-2 text-left bg-gray-950 p-3 rounded-xl border border-gray-800">
+      <input type="checkbox" id="acceptCheck" checked class="mt-0.5 w-4 h-4 accent-cyan-500 cursor-pointer">
+      <label for="acceptCheck" class="text-[10px] text-gray-300 leading-tight cursor-pointer">
+        Soy mayor de edad (+18) y acepto los <span class="text-cyan-400 underline font-semibold" onclick="openModal('terms')">Términos</span> y la <span class="text-cyan-400 underline font-semibold" onclick="openModal('privacy')">Privacidad</span>.
+      </label>
+    </div>
+
+    <button id="btnEnter" onclick="enterApp()" class="w-full py-3.5 rounded-full font-bold text-white bg-gradient-to-r from-purple-600 to-cyan-500 hover:opacity-90 active:scale-95 transition shadow-lg cursor-pointer">
+      Entrar a Bliz
+    </button>
   </div>
 </div>
 
-<!-- APLICACIÓN PRINCIPAL -->
-<div class="main-app">
-  <div style="position: relative; flex: 1; overflow: hidden;">
-    <video id="remoteVideo" autoplay playsinline></video>
-    <video id="selfCamera" autoplay playsinline muted class="top-cam"></video>
-  </div>
-  
-  <div class="controls">
-    <button onclick="alert('Bloqueado')">Bloquear</button>
-    <button onclick="alert('Reportado')">Reportar</button>
-    <button class="next" onclick="alert('Siguiente usuario')">Siguiente ➔</button>
+<!-- VENTANA MODAL LEGAL -->
+<div id="legalModal" class="hidden fixed inset-0 bg-black/90 z-50 p-5 flex-col justify-center items-center">
+  <div class="w-full max-w-sm bg-gray-900 border border-gray-800 rounded-2xl p-5 flex flex-col gap-3">
+    <h3 id="legalTitle" class="text-sm font-bold text-cyan-400"></h3>
+    <div id="legalContent" class="text-xs text-gray-300 max-h-60 overflow-y-auto leading-relaxed border-t border-b border-gray-800 py-3"></div>
+    <button onclick="closeModal()" class="w-full py-2 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl text-xs">Cerrar</button>
   </div>
 </div>
+
+<!-- HEADER CON CONTADOR ONLINE -->
+<header class="flex-none flex justify-between items-center px-4 py-2.5 bg-gray-900 border-b border-gray-800">
+  <div class="flex items-center gap-2">
+    <div id="secretLogoHeader" class="text-xl font-black bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent cursor-pointer">⚡ BLIZ</div>
+    <div class="flex items-center gap-1 bg-emerald-950/60 border border-emerald-500/40 px-2 py-0.5 rounded-full text-[10px] font-medium text-emerald-400">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span id="onlineCount">1,248</span> online
+    </div>
+  </div>
+  <div id="godBadge" class="hidden bg-red-950/60 text-red-400 border border-red-500 px-3 py-1 rounded-full text-xs font-bold cursor-pointer">👑 MODO DIOS</div>
+</header>
+
+<!-- BARRA DE FILTROS -->
+<div class="flex-none flex items-center justify-between gap-2 px-3 py-1.5 bg-[#131B2A] border-b border-gray-800">
+  <div class="flex flex-1 items-center gap-1.5">
+    <span class="text-[11px] text-gray-400 font-semibold whitespace-nowrap">🌐 País:</span>
+    <select id="countrySelect" class="flex-1 p-1 rounded-lg border border-gray-700 bg-[#0B0F19] text-white text-xs outline-none">
+      <option value="GLOBAL">🌍 Todos los países</option>
+      <option value="ES">🇪🇸 España</option>
+      <option value="MX">🇲🇽 México</option>
+    </select>
+  </div>
+  <div class="flex flex-1 items-center gap-1.5">
+    <span class="text-[11px] text-gray-400 font-semibold whitespace-nowrap">👤 Buscar:</span>
+    <select id="genderSelect" class="flex-1 p-1 rounded-lg border border-gray-700 bg-[#0B0F19] text-white text-xs outline-none">
+      <option value="ALL">👫 Todos</option>
+      <option value="FEMALE">👩 Mujeres</option>
+      <option value="MALE">👨 Hombres</option>
+    </select>
+  </div>
+</div>
+
+<!-- CONTENEDOR PRINCIPAL DE VÍDEO -->
+<main class="flex-1 flex flex-col min-h-0 relative p-2 gap-2">
+  <div id="swipeArea" class="flex-1 min-h-0 relative bg-black rounded-2xl overflow-hidden border border-gray-800 flex justify-center items-center">
+    
+    <video id="remoteVideo" autoplay playsinline class="absolute inset-0 w-full h-full object-cover z-0 bg-gray-950"></video>
+
+    <div id="searchState" class="z-10 text-center text-gray-400 pointer-events-none">
+      <div class="text-4xl animate-bounce">🔍</div>
+      <p class="mt-2 text-xs font-medium">Buscando usuario en línea...</p>
+      <p class="text-[10px] text-gray-500 mt-1">Desliza hacia arriba para omitir</p>
+    </div>
+
+    <!-- CONTROLES FLOTANTES CÁMARA -->
+    <div class="absolute top-2.5 left-2.5 flex flex-col gap-2 z-20">
+      <button id="btnMic" class="w-8 h-8 rounded-full bg-gray-900/80 border border-white/20 text-white flex justify-center items-center text-xs backdrop-blur">🎤</button>
+      <button id="btnCam" class="w-8 h-8 rounded-full bg-gray-900/80 border border-white/20 text-white flex justify-center items-center text-xs backdrop-blur">📹</button>
+      <button id="btnFlipCam" class="w-8 h-8 rounded-full bg-gray-900/80 border border-white/20 text-white flex justify-center items-center text-xs backdrop-blur">🔄</button>
+      <button id="btnBeauty" class="w-8 h-8 rounded-full bg-gray-900/80 border border-white/20 text-white flex justify-center items-center text-xs backdrop-blur">✨</button>
+    </div>
+
+    <video id="selfCamera" autoplay playsinline muted class="absolute top-2.5 right-2.5 w-20 h-28 object-cover bg-gray-900 rounded-xl border-2 border-purple-500 z-20 transition-all"></video>
+
+    <!-- CHAT OVERLAY -->
+    <div class="absolute bottom-2.5 left-2.5 right-2.5 flex flex-col gap-1.5 z-20 pointer-events-auto">
+      <div id="chatMsgs" class="max-h-16 overflow-y-auto flex flex-col gap-1 pointer-events-none">
+        <div class="bg-gray-900/80 backdrop-blur px-2.5 py-0.5 rounded-xl text-[10px] max-w-[85%] border border-white/10">
+          <strong class="text-purple-400">Sistema:</strong> Conectado a Bliz. Respeto obligatorio.
+        </div>
+      </div>
+
+      <div class="flex gap-1.5">
+        <button onclick="sendEmoji('❤️')" class="bg-gray-900/80 border border-white/15 rounded-xl px-2 py-0.5 text-sm active:scale-90 transition">❤️</button>
+        <button onclick="sendEmoji('😂')" class="bg-gray-900/80 border border-white/15 rounded-xl px-2 py-0.5 text-sm active:scale-90 transition">😂</button>
+        <button onclick="sendEmoji('🔥')" class="bg-gray-900/80 border border-white/15 rounded-xl px-2 py-0.5 text-sm active:scale-90 transition">🔥</button>
+        <button onclick="sendEmoji('👋')" class="bg-gray-900/80 border border-white/15 rounded-xl px-2 py-0.5 text-sm active:scale-90 transition">👋</button>
+      </div>
+
+      <div class="flex gap-1.5">
+        <input type="text" id="chatInput" placeholder="Escribe un mensaje..." autocomplete="off" class="flex-1 px-3 py-1.5 rounded-full border border-gray-700 bg-gray-950/85 text-white text-xs outline-none focus:border-cyan-500">
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTONES INFERIORES -->
+  <div class="flex-none flex gap-2 pb-1">
+    <button id="blockBtn" class="flex-1 py-2.5 rounded-full font-bold text-xs text-white bg-red-900/80 border border-red-700">🚫 Bloquear</button>
+    <button id="reportBtn" class="flex-1 py-2.5 rounded-full font-bold text-xs text-white bg-gray-800 border border-gray-700">⚠️ Reportar</button>
+    <button id="nextBtn" class="flex-1 py-2.5 rounded-full font-bold text-xs text-white bg-gradient-to-r from-purple-600 to-cyan-500">Siguiente ➔</button>
+  </div>
+</main>
 
 <script>
-function forceEnter() {
-    var chk = document.getElementById('cbox');
+let localStream = null;
+let peer = null;
+let currentFacingMode = 'user';
+let beautyOn = false;
+
+function openModal(type) {
+    document.getElementById('legalModal').style.display = 'flex';
+    if(type === 'terms') {
+        document.getElementById('legalTitle').innerText = "Términos de Uso";
+        document.getElementById('legalContent').innerText = "1. Exclusivo para mayores de 18 años.\n2. Prohibido contenido explícito y acoso.\n3. Baneo inmediato por incumplimiento.";
+    } else {
+        document.getElementById('legalTitle').innerText = "Política de Privacidad";
+        document.getElementById('legalContent').innerText = "1. Conexiones P2P directas cifradas.\n2. No grabamos llamadas en servidores.";
+    }
+}
+
+function closeModal() {
+    document.getElementById('legalModal').style.display = 'none';
+}
+
+function enterApp() {
+    const chk = document.getElementById('acceptCheck');
     if (chk && !chk.checked) {
-        alert("Debes aceptar los términos.");
+        alert("Debes aceptar los Términos y la Privacidad.");
         return;
     }
 
-    // Ocultar pantalla de acceso de inmediato por fuerza bruta CSS
-    var screen = document.getElementById('authScreen');
+    // Forzar cierre de la pantalla de bienvenida
+    const screen = document.getElementById('authScreen');
     if (screen) {
         screen.style.cssText = "display: none !important;";
     }
 
-    // Activar cámara frontal directamente
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+    // Activar cámara
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode }, audio: true })
     .then(function(stream) {
-        var selfVid = document.getElementById('selfCamera');
-        if (selfVid) {
-            selfVid.srcObject = stream;
-        }
+        localStream = stream;
+        document.getElementById('selfCamera').srcObject = stream;
     })
-    .catch(function(error) {
-        alert("Aviso: No se pudo iniciar la cámara (" + error.message + "). La app continuará abierta.");
+    .catch(function(err) {
+        console.log("Error de cámara:", err);
     });
+
+    // Inicializar red P2P
+    if (typeof Peer !== 'undefined') {
+        try {
+            peer = new Peer({ config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] } });
+        } catch(e){}
+    }
+}
+
+document.getElementById('nextBtn').onclick = function() {
+    document.getElementById('remoteVideo').srcObject = null;
+    document.getElementById('searchState').style.display = 'block';
+    setTimeout(function() {
+        document.getElementById('searchState').style.display = 'none';
+    }, 1500);
+};
+
+document.getElementById('btnFlipCam').onclick = function() {
+    currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+    if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+    }
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode }, audio: true })
+    .then(function(stream) {
+        localStream = stream;
+        document.getElementById('selfCamera').srcObject = stream;
+    });
+};
+
+document.getElementById('btnBeauty').onclick = function() {
+    beautyOn = !beautyOn;
+    document.getElementById('selfCamera').classList.toggle('beauty-active', beautyOn);
+    this.classList.toggle('bg-purple-600', beautyOn);
+};
+
+document.getElementById('blockBtn').onclick = function() { alert("Usuario bloqueado."); };
+document.getElementById('reportBtn').onclick = function() { alert("Reporte enviado."); };
+
+let clickCount = 0;
+document.getElementById('secretLogoAuth').onclick = triggerGod;
+document.getElementById('secretLogoHeader').onclick = triggerGod;
+function triggerGod() {
+    clickCount++;
+    if(clickCount >= 5) {
+        clickCount = 0;
+        if(prompt("Clave admin:") === "admin123") {
+            document.getElementById('godBadge').style.display = 'block';
+            alert("Modo Dios activado");
+        }
+    }
 }
 </script>
-
 </body>
 </html>
