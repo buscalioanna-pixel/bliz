@@ -3,125 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bliz - Modo Dios Discreto</title>
+    <title>Bliz - Videochat</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #111827; color: white; margin: 0; padding: 20px; }
-        h1 { color: #f43f5e; font-size: 1.5rem; }
-        .dashboard { display: flex; gap: 20px; flex-wrap: wrap; }
-        .user-list-container { flex: 1; background: #1f2937; padding: 20px; border-radius: 10px; max-height: 80vh; overflow-y: auto; }
-        .live-preview { flex: 1; background: #1f2937; padding: 20px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #374151; font-size: 0.9rem; }
-        th { color: #38bdf8; }
-        button { background: #10b981; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #059669; }
-        video { width: 100%; max-width: 400px; height: 300px; background: black; border-radius: 8px; object-fit: cover; margin-top: 10px; }
-        .status-tag { color: #10b981; font-weight: bold; }
+        body { font-family: Arial, sans-serif; background: #111827; color: white; margin: 0; display: flex; flex-direction: column; height: 100vh; text-align: center; }
+        .grid { display: flex; flex: 1; background: #000; position: relative; }
+        .box { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; border: 1px solid #1f2937; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        .status { position: absolute; background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 20px; }
+        .controls { background: #1f2937; padding: 20px; }
+        button { background: #10b981; color: white; border: none; padding: 12px 30px; font-size: 1rem; border-radius: 8px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h1>⚡ Panel Discreto - Modo Dios</h1>
-    <p>Estado: <span class="status-tag">Oculto / En espera de conexión</span></p>
-
-    <div class="dashboard">
-        <!-- Lista de personas "buscando" -->
-        <div class="user-list-container">
-            <h3>Personas buscando chat</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID de Usuario</th>
-                        <th>Datos</th>
-                        <th>Acción</th>
-                    </tr>
-                </thead>
-                <tbody id="users-table-body">
-                    <tr><td colspan="3">Buscando personas en línea...</td></tr>
-                </tbody>
-            </table>
+    <h2>Bliz Video Chat</h2>
+    <div class="grid">
+        <div class="box">
+            <video id="local-video" autoplay muted playsinline></video>
+            <div class="status" style="bottom: 10px; left: 10px;">Tú</div>
         </div>
-
-        <!-- Pantalla de la "llamada aleatoria" en curso -->
-    <div class="live-preview">
-            <h3>Cámara de la Conversación</h3>
-            <video id="admin-remote" autoplay playsinline></video>
-            <p style="margin-top: 10px; font-size: 0.9rem; color: #9ca3af;">Para el usuario, esto es una videollamada normal y aleatoria.</p>
+        <div class="box">
+            <video id="remote-video" autoplay playsinline></video>
+            <div id="loader" class="status">🔍 Buscando persona aleatoria...</div>
         </div>
     </div>
-
-    <!-- Tu vídeo local oculto o pequeño para que la llamada funcione -->
-    <video id="admin-local" autoplay muted playsinline style="display:none;"></video>
+    <div class="controls">
+        <button onclick="buscarPersona()">⏭️ Siguiente</button>
+    </div>
 
     <script>
         const SUPABASE_URL = 'https://zcdgnzbegusizsxozfrr.supabase.co';
-        const SUPABASE_KEY = 'TU_PUBLISHABLE_KEY_AQUI'; // Pega tu clave real de Supabase
+        const SUPABASE_KEY = 'TU_PUBLISHABLE_KEY_AQUI'; // Pega tu clave real
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let peer = null;
-        let adminStream = null;
-        let currentCall = null;
+        let localStream, peer, myPeerId;
 
         async function init() {
             try {
-                // Captura tu cámara y micrófono de forma silenciosa
-                adminStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                document.getElementById('admin-local').srcObject = adminStream;
-            } catch (err) {
-                alert("Error al activar la cámara del admin.");
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                document.getElementById('local-video').srcObject = localStream;
+            } catch (e) {
+                alert("Permite el uso de cámara y micrófono.");
             }
 
             peer = new Peer();
+            peer.on('open', (id) => {
+                myPeerId = id;
+                buscarPersona();
+            });
+
+            peer.on('call', (call) => {
+                call.answer(localStream);
+                call.on('stream', (remoteStream) => {
+                    document.getElementById('remote-video').srcObject = remoteStream;
+                    document.getElementById('loader').style.display = 'none';
+                });
+            });
         }
 
-        async function loadActiveUsers() {
-            const { data, error } = await supabaseClient.from('active_users').select('*');
-            const tbody = document.getElementById('users-table-body');
-            tbody.innerHTML = '';
+        async function buscarPersona() {
+            document.getElementById('remote-video').srcObject = null;
+            document.getElementById('loader').style.display = 'block';
 
-            if (error || !data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3">No hay nadie buscando en este momento.</td></tr>`;
-                return;
+            if (myPeerId) {
+                await supabaseClient.from('active_users').upsert({
+                    id: myPeerId,
+                    gender: 'male',
+                    country: 'ES',
+                    updated_at: new Date()
+                });
             }
-
-            data.forEach(user => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${user.id.substring(0, 8)}...</td>
-                    <td>${user.gender} / ${user.country}</td>
-                    <td><button onclick="connectToUser('${user.id}')">Conectar</button></td>
-                `;
-                tbody.appendChild(tr);
-            });
         }
 
-        // Función para "aparecer" en la pantalla del usuario de forma natural
-        function connectToUser(targetId) {
-            if (!adminStream) return;
+        window.addEventListener('beforeunload', () => {
+            if (myPeerId) supabaseClient.from('active_users').delete().eq('id', myPeerId);
+        });
 
-            if (currentCall) {
-                currentCall.close(); // Cierra llamada anterior si la había
-            }
-
-            // Realiza la llamada PeerJS directamente al usuario seleccionado
-            currentCall = peer.call(targetId, adminStream);
-
-            currentCall.on('stream', (remoteStream) => {
-                // Muestra el vídeo del usuario en tu panel
-                document.getElementById('admin-remote').srcObject = remoteStream;
-            });
-
-            currentCall.on('error', (err) => {
-                alert("No se pudo conectar con el usuario.");
-            });
-        }
-
-        window.onload = () => {
-            init();
-            loadActiveUsers();
-            setInterval(loadActiveUsers, 4000); // Actualiza la lista cada 4 segundos
-        };
+        window.onload = init;
     </script>
 </body>
 </html>
