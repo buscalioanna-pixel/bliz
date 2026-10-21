@@ -69,4 +69,49 @@ html, body {
   <div class="w-full max-w-sm bg-gray-900 border border-gray-800 rounded-2xl p-5 flex flex-col gap-3">
     <h3 id="legalTitle" class="text-sm font-bold text-cyan-400"></h3>
     <div id="legalContent" class="text-xs text-gray-300 max-h-60 overflow-y-auto leading-relaxed border-t border-b border-gray-800 py-3"></div>
-    <button onclick="closeLegalModal()" class="w-full py-2 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded
+    <button onclick="closeLegalModal()" class="w-full py-2 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl text-xs">Entendido</button>
+  </div>
+</div>
+
+<!-- HEADER PRINCIPAL -->
+<header class="flex-none flex justify-between items-center px-4 py-2.5 bg-gray-900 border-b border-gray-800">
+  <div class="flex items-center gap-2">
+    <div id="secretLogoHeader" class="text-xl font-black bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent cursor-pointer">⚡ BLIZ</div>
+    <div class="flex items-center gap-1 bg-emerald-950/60 border border-emerald-500/40 px-2 py-0.5 rounded-full text-[10px] font-medium text-emerald-400">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span id="onlineCount">1,248</span> online
+    </div>
+  </div>
+  <div id="godBadge" class="hidden bg-red-950/60 text-red-400 border border-red-500 px-3 py-1 rounded-full text-xs font-bold cursor-pointer">👑 MODO DIOS</div>
+</header>
+
+<!-- BARRA DE FILTROS -->
+<div class="flex-none flex items-center justify-between gap-2 px-3 py-1.5 bg-[#131B2A] border-b border-gray-800">
+  <div class="flex flex-1 items-center gap-1.5">
+    <span class="text-[11px] text-gray-400 font-semibold whitespace-nowrap">🌐 País:</span>
+    <select id="countrySelect" class="flex-1 p-1 rounded-lg border border-gray-700 bg-[#0B0F19] text-white text-xs outline-none">
+      <option value="GLOBAL">🌍 Todos los países</option>
+      <option value="ES">🇪🇸 España</option>
+      <option value="MX">🇲🇽 México</option>
+      <option value="CO">🇨🇴 Colombia</option>
+      <option value="AR">🇦🇷 Argentina</option>
+    </select>
+  </div>
+  <div class="flex flex-1 items-center gap-1.5">
+    <span class="text-[11px] text-gray-400 font-semibold whitespace-nowrap">👤 Buscar:</span>
+    <select id="genderSelect" class="flex-1 p-1 rounded-lg border border-gray-700 bg-[#0B0F19] text-white text-xs outline-none">
+      <option value="ALL">👫 Todos</option>
+      <option value="FEMALE">👩 Mujeres</option>
+      <option value="MALE">👨 Hombres</option>
+    </select>
+  </div>
+</div>
+
+<!-- MAIN VIDEO CONTAINER -->
+<main class="flex-1 flex flex-col min-h-0 relative p-2 gap-2">
+  <div id="swipeArea" class="flex-1 min-h-0 relative bg-black rounded-2xl overflow-hidden border border-gray-800 flex justify-center items-center">
+    
+    <video id="remoteVideo" autoplay playsinline class="absolute inset-0 w-full h-full object-cover z-0 bg-gray-950"></video>
+
+    <!-- ETIQUETA DE PAÍS DEL USUARIO REMOTO -->
+    <div id="remoteCountryBadge" class="hidden absolute top-3 left-3 bg-black/60 backdrop-blur-md border border-white/20 text-white px-3 py-
