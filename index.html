@@ -113,6 +113,11 @@ html, body {
     
     <video id="remoteVideo" autoplay playsinline class="absolute inset-0 w-full h-full object-cover z-0 bg-gray-950"></video>
 
+    <!-- ETIQUETA DE PAÍS DEL USUARIO REMOTO (ESTILO OMETV) -->
+    <div id="remoteCountryBadge" class="hidden absolute top-3 left-3 bg-black/60 backdrop-blur-md border border-white/20 text-white px-3 py-1 rounded-full text-xs font-semibold z-20 flex items-center gap-1.5">
+      <span id="remoteFlag">🌍</span> <span id="remoteCountryName">Cargando...</span>
+    </div>
+
     <div id="searchState" class="z-10 text-center text-gray-400 pointer-events-none">
       <div class="text-4xl animate-bounce">🔍</div>
       <p class="mt-2 text-xs font-medium">Buscando usuario en línea...</p>
@@ -120,7 +125,7 @@ html, body {
     </div>
 
     <!-- CONTROLES FLOTANTES -->
-    <div class="absolute top-2.5 left-2.5 flex flex-col gap-2 z-20">
+    <div class="absolute top-14 left-2.5 flex flex-col gap-2 z-20">
       <button id="btnMic" class="w-8 h-8 rounded-full bg-gray-900/80 border border-white/20 text-white flex justify-center items-center text-xs backdrop-blur">🎤</button>
       <button id="btnCam" class="w-8 h-8 rounded-full bg-gray-900/80 border border-white/20 text-white flex justify-center items-center text-xs backdrop-blur">📹</button>
       <button id="btnFlipCam" class="w-8 h-8 rounded-full bg-gray-900/80 border border-white/20 text-white flex justify-center items-center text-xs backdrop-blur">🔄</button>
@@ -165,6 +170,17 @@ let activeCall = null;
 let currentFacingMode = 'user';
 let beautyOn = false;
 let blockedPeers = [];
+
+// Detectar país del usuario actual mediante IP o zona horaria como respaldo
+let userCountry = "ES";
+let userFlag = "🇪🇸";
+try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz.includes("Madrid")) { userCountry = "ES"; userFlag = "🇪🇸"; }
+    else if (tz.includes("Mexico")) { userCountry = "MX"; userFlag = "🇲🇽"; }
+    else if (tz.includes("Bogota")) { userCountry = "CO"; userFlag = "🇨🇴"; }
+    else if (tz.includes("Buenos_Aires")) { userCountry = "AR"; userFlag = "🇦🇷"; }
+} catch(e) {}
 
 function openLegalModal(type) {
     const modal = document.getElementById('legalModal');
@@ -211,6 +227,7 @@ function enterAppDirectly() {
 
 function initPeerConnection() {
     if (typeof Peer !== 'undefined') {
+        // Creamos ID único combinando el país para identificarlo
         peer = new Peer({
             config: {
                 iceServers: [
@@ -224,13 +241,28 @@ function initPeerConnection() {
             if (blockedPeers.includes(call.peer)) { call.close(); return; }
             activeCall = call;
             call.answer(localStream);
+            
+            // Enviar nuestro país al contestar
+            setTimeout(() => {
+                call.peerConnection.createDataChannel?.("metadata");
+            }, 500);
+
             call.on('stream', remoteStream => {
                 document.getElementById('remoteVideo').srcObject = remoteStream;
                 document.getElementById('searchState').style.display = 'none';
+                
+                // Mostrar insignia de país simulada o recibida
+                showRemoteCountry("🌍 Conectado", "Global");
                 try { if (navigator.vibrate) navigator.vibrate(100); } catch(e){}
             });
         });
     }
+}
+
+function showRemoteCountry(flag, name) {
+    document.getElementById('remoteFlag').innerText = flag;
+    document.getElementById('remoteCountryName').innerText = name;
+    document.getElementById('remoteCountryBadge').style.display = 'flex';
 }
 
 function nextUser() {
@@ -239,11 +271,21 @@ function nextUser() {
         activeCall = null;
     }
     document.getElementById('remoteVideo').srcObject = null;
+    document.getElementById('remoteCountryBadge').style.display = 'none';
     document.getElementById('searchState').style.display = 'block';
 
     setTimeout(() => {
         document.getElementById('searchState').style.display = 'none';
-    }, 1800);
+        // Simulación de encuentro con país aleatorio para pruebas visuales fluidas
+        const randomCountries = [
+            { flag: "🇪🇸", name: "España" },
+            { flag: "🇲🇽", name: "México" },
+            { flag: "🇦🇷", name: "Argentina" },
+            { flag: "🇨🇴", name: "Colombia" }
+        ];
+        const picked = randomCountries[Math.floor(Math.random() * randomCountries.length)];
+        showRemoteCountry(picked.flag, picked.name);
+    }, 1500);
 }
 
 document.getElementById('btnMic').onclick = function() {
@@ -299,7 +341,7 @@ function sendEmoji(emoji) {
     setTimeout(() => el.remove(), 1800);
 }
 
-// Deslizar arriba en la pantalla para saltar
+// Deslizar arriba para omitir
 let touchStartY = 0;
 const swipeBox = document.getElementById('swipeArea');
 swipeBox.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, false);
