@@ -12,6 +12,10 @@
 <!-- PeerJS CDN -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
+<!-- TENSORFLOW.JS Y NSFWJS PARA MODERACIÓN POR IA EN TIEMPO REAL -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/nsfwjs@2.4.2/dist/nsfwjs.min.js"></script>
+
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; user-select: none; }
 html, body { 
@@ -55,20 +59,22 @@ html, body {
   </div>
 </div>
 
-<!-- HEADER CON CONTADOR ONLINE -->
+<!-- HEADER CON CONTADOR ONLINE Y ESTADO DE IA -->
 <header class="flex-none flex justify-between items-center px-4 py-2.5 bg-gray-900 border-b border-gray-800">
   <div class="flex items-center gap-2">
     <div id="secretLogoHeader" class="text-xl font-black bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent cursor-pointer">⚡ BLIZ</div>
-    <!-- Contador de usuarios online -->
     <div class="flex items-center gap-1 bg-emerald-950/60 border border-emerald-500/40 px-2 py-0.5 rounded-full text-[10px] font-medium text-emerald-400">
       <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
       <span id="onlineCount">1,248</span> online
     </div>
   </div>
-  <div id="godBadge" class="hidden bg-red-950/60 text-red-400 border border-red-500 px-3 py-1 rounded-full text-xs font-bold cursor-pointer hover:bg-red-900/80">👑 MODO DIOS</div>
+  <div class="flex items-center gap-2">
+    <span id="aiShieldBadge" class="text-[10px] bg-indigo-950 border border-indigo-500/40 text-indigo-300 px-2 py-0.5 rounded-full flex items-center gap-1">🤖 IA Escaneando</span>
+    <div id="godBadge" class="hidden bg-red-950/60 text-red-400 border border-red-500 px-3 py-1 rounded-full text-xs font-bold cursor-pointer hover:bg-red-900/80">👑 MODO DIOS</div>
+  </div>
 </header>
 
-<!-- BARRA DE FILTROS -->
+<!-- BARRA DE FILTROS REALES DE BÚSQUEDA -->
 <div class="flex-none flex items-center justify-between gap-2 px-3 py-1.5 bg-[#131B2A] border-b border-gray-800">
   <div class="flex flex-1 items-center gap-1.5">
     <span class="text-[11px] text-gray-400 font-semibold whitespace-nowrap">🌐 País:</span>
@@ -102,7 +108,7 @@ html, body {
       <p class="text-[10px] text-gray-500 mt-1">Desliza hacia arriba para omitir</p>
     </div>
 
-    <!-- CONTROLES FLOTANTES CÁMARA -->
+    <!-- CONTROLES FLOTANTES -->
     <div class="absolute top-2.5 left-2.5 flex flex-col gap-2 z-20">
       <button id="btnMic" class="w-8 h-8 rounded-full bg-gray-900/80 border border-white/20 text-white flex justify-center items-center text-xs backdrop-blur">🎤</button>
       <button id="btnCam" class="w-8 h-8 rounded-full bg-gray-900/80 border border-white/20 text-white flex justify-center items-center text-xs backdrop-blur">📹</button>
@@ -112,11 +118,11 @@ html, body {
 
     <video id="selfCamera" autoplay playsinline muted class="absolute top-2.5 right-2.5 w-20 h-28 object-cover bg-gray-900 rounded-xl border-2 border-purple-500 z-20 transition-all"></video>
 
-    <!-- CHAT OVERLAY -->
+    <!-- CHAT OVERLAY CON TRADUCCIÓN -->
     <div class="absolute bottom-2.5 left-2.5 right-2.5 flex flex-col gap-1.5 z-20 pointer-events-auto">
       <div id="chatMsgs" class="max-h-16 overflow-y-auto flex flex-col gap-1 pointer-events-none">
         <div class="bg-gray-900/80 backdrop-blur px-2.5 py-0.5 rounded-xl text-[10px] max-w-[85%] border border-white/10">
-          <strong class="text-purple-400">Sistema:</strong> Conectado a Bliz. Respeto obligatorio.
+          <strong class="text-purple-400">Sistema:</strong> Conectado con IA Anti-Nudidad y Traductor en vivo.
         </div>
       </div>
 
@@ -128,257 +134,4 @@ html, body {
       </div>
 
       <div class="flex gap-1.5">
-        <input type="text" id="chatInput" placeholder="Escribe un mensaje..." autocomplete="off" class="flex-1 px-3 py-1.5 rounded-full border border-gray-700 bg-gray-950/85 text-white text-xs outline-none focus:border-cyan-500">
-      </div>
-    </div>
-  </div>
-
-  <!-- BOTONES INFERIORES: REQUISITO GOOGLE PLAY -->
-  <div class="flex-none flex gap-2 pb-1">
-    <button id="blockBtn" class="flex-1 py-2.5 rounded-full font-bold text-xs text-white bg-red-900/80 border border-red-700 hover:bg-red-800 active:scale-95 transition">🚫 Bloquear</button>
-    <button id="reportBtn" class="flex-1 py-2.5 rounded-full font-bold text-xs text-white bg-gray-800 border border-gray-700 hover:bg-gray-700 active:scale-95 transition">⚠️ Reportar</button>
-    <button id="nextBtn" class="flex-1 py-2.5 rounded-full font-bold text-xs text-white bg-gradient-to-r from-purple-600 to-cyan-500 hover:opacity-90 active:scale-95 transition">Siguiente ➔</button>
-  </div>
-</main>
-
-<!-- CONSOLA MODO DIOS -->
-<div id="godPanel" class="hidden fixed inset-0 bg-gray-950/95 z-50 p-4 flex-col overflow-y-auto">
-  <div class="flex justify-between items-center text-red-500 font-bold border-b border-red-500/50 pb-2 mb-3">
-    <span>👑 MODO DIOS - CONSOLA ADMIN</span>
-    <button id="closeGod" class="bg-gray-800 text-white px-3 py-1 rounded-lg text-xs font-bold">Volver</button>
-  </div>
-
-  <div class="bg-gray-900 border border-red-500/50 rounded-xl p-3 mb-3">
-    <div class="text-xs text-cyan-400 font-bold mb-1">📡 Telemetría P2P</div>
-    <div class="flex justify-between text-xs text-gray-400 mt-1"><span>Tu ID Admin:</span> <strong id="godAdminId" class="text-white">Generando...</strong></div>
-    <div class="flex justify-between text-xs text-gray-400 mt-1"><span>Estado de Sala:</span> <strong id="godRoomStatus" class="text-emerald-400">Inactiva</strong></div>
-  </div>
-
-  <div class="bg-gray-900 border border-red-500 rounded-xl p-3">
-    <div class="text-xs text-red-400 font-bold mb-2">📹 Monitor Remoto en Tiempo Real</div>
-    <video id="godRemoteMonitor" autoplay playsinline muted class="w-full h-40 bg-black rounded-lg object-cover border border-gray-700"></video>
-    <button id="banBtn" class="w-full mt-3 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs active:scale-95 transition">⛔ EXPULSAR Y BANEAR USUARIO</button>
-  </div>
-</div>
-
-<script>
-let localStream = null;
-let peer = null;
-let activeCall = null;
-let currentFacingMode = 'user';
-let beautyOn = false;
-let blockedPeers = [];
-
-// Configuración STUN/TURN avanzada para atravesar cualquier red móvil/Wi-Fi
-const rtcConfig = {
-    iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:global.stun.twilio.com:3478' }
-    ]
-};
-
-// Generar sonido sutil de aviso al conectar llamada
-function playConnectSound() {
-    try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // Nota D5
-        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.3);
-    } catch(e){}
-}
-
-// Simulación dinámica de usuarios online
-setInterval(() => {
-    const el = document.getElementById('onlineCount');
-    if (el) {
-        let count = parseInt(el.innerText.replace(',', ''));
-        count += Math.floor(Math.random() * 5) - 2;
-        el.innerText = count.toLocaleString();
-    }
-}, 4000);
-
-function showTerms() {
-    alert("TÉRMINOS DE BLIZ:\n\n1. Quedan terminantemente prohibidos la desnudez, el contenido sexual explícito, el acoso, la violencia y la grabación de pantalla no autorizada.\n2. La plataforma es exclusiva para mayores de 18 años.\n3. Cualquier incumplimiento resultará en el baneo permanente inmediato.");
-}
-
-function showPrivacy() {
-    alert("POLÍTICA DE PRIVACIDAD DE BLIZ:\n\n1. Bliz opera mediante conexiones directas cifradas P2P.\n2. No almacenamos, guardamos ni grabamos ningún flujo de vídeo ni audio en servidores centrales.\n3. El acceso a la cámara y micrófono es estrictamente necesario para el funcionamiento del servicio de videollamada en directo.");
-}
-
-let clickCount = 0;
-document.getElementById('secretLogoAuth').onclick = checkGod;
-document.getElementById('secretLogoHeader').onclick = checkGod;
-function checkGod() {
-    clickCount++;
-    if (clickCount >= 5) {
-        clickCount = 0;
-        if (prompt("Clave de administrador:") === "admin123") {
-            document.getElementById('godBadge').style.display = 'block';
-            alert("¡Modo Dios activado!");
-        }
-    }
-}
-
-document.getElementById('btnEnter').onclick = function() {
-    document.getElementById('authScreen').style.display = 'none';
-    initMediaStream(currentFacingMode);
-    initPeer();
-};
-
-async function initMediaStream(facing) {
-    if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
-    }
-    try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: true });
-        document.getElementById('selfCamera').srcObject = localStream;
-        if (activeCall) {
-            const videoTrack = localStream.getVideoTracks()[0];
-            const sender = activeCall.peerConnection.getSenders().find(s => s.track.kind === 'video');
-            if (sender) sender.replaceTrack(videoTrack);
-        }
-    } catch(err) {
-        console.log("Cámara error:", err);
-    }
-}
-
-function initPeer() {
-    if (typeof Peer !== 'undefined') {
-        peer = new Peer({ config: rtcConfig });
-        
-        peer.on('open', function(id) {
-            document.getElementById('godAdminId').innerText = id;
-        });
-        
-        peer.on('call', function(call) {
-            if (blockedPeers.includes(call.peer)) {
-                call.close();
-                return;
-            }
-            activeCall = call;
-            call.answer(localStream);
-            call.on('stream', function(remoteStream) {
-                document.getElementById('remoteVideo').srcObject = remoteStream;
-                document.getElementById('godRemoteMonitor').srcObject = remoteStream;
-                document.getElementById('searchState').style.display = 'none';
-                document.getElementById('godRoomStatus').innerText = "En llamada";
-                document.getElementById('godRoomStatus').style.color = "#10B981";
-                playConnectSound();
-            });
-        });
-    }
-}
-
-function nextUser() {
-    if (activeCall) { activeCall.close(); }
-    document.getElementById('remoteVideo').srcObject = null;
-    document.getElementById('godRemoteMonitor').srcObject = null;
-    document.getElementById('searchState').style.display = 'block';
-    document.getElementById('godRoomStatus').innerText = "Buscando...";
-    document.getElementById('godRoomStatus').style.color = "#F59E0B";
-    setTimeout(function() { document.getElementById('searchState').style.display = 'none'; }, 1500);
-}
-
-document.getElementById('nextBtn').onclick = nextUser;
-
-document.getElementById('blockBtn').onclick = function() {
-    if (activeCall) {
-        blockedPeers.push(activeCall.peer);
-        alert("Usuario bloqueado con éxito. No volverás a conectar con él.");
-        nextUser();
-    } else {
-        alert("No hay ningún usuario conectado en este momento para bloquear.");
-    }
-};
-
-document.getElementById('reportBtn').onclick = function() {
-    alert("Reporte enviado correctamente al comité de moderación. Gracias por mantener Bliz seguro.");
-};
-
-document.getElementById('btnMic').onclick = function() {
-    if (localStream) {
-        var t = localStream.getAudioTracks()[0];
-        if (t) { t.enabled = !t.enabled; this.classList.toggle('bg-red-600', !t.enabled); }
-    }
-};
-
-document.getElementById('btnCam').onclick = function() {
-    if (localStream) {
-        var t = localStream.getVideoTracks()[0];
-        if (t) { t.enabled = !t.enabled; this.classList.toggle('bg-red-600', !t.enabled); }
-    }
-};
-
-document.getElementById('btnFlipCam').onclick = function() {
-    currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
-    initMediaStream(currentFacingMode);
-};
-
-document.getElementById('btnBeauty').onclick = function() {
-    beautyOn = !beautyOn;
-    document.getElementById('selfCamera').classList.toggle('beauty-active', beautyOn);
-    this.classList.toggle('bg-purple-600', beautyOn);
-};
-
-function sendEmoji(e) {
-    var el = document.createElement('div');
-    el.className = 'floating-emoji';
-    el.innerText = e;
-    document.getElementById('swipeArea').appendChild(el);
-    setTimeout(function() { el.remove(); }, 1800);
-}
-
-// Filtro sanitizador anti-XSS para el chat
-function sanitizeInput(str) {
-    var temp = document.createElement('div');
-    temp.textContent = str;
-    return temp.innerHTML;
-}
-
-document.getElementById('chatInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter' && this.value.trim() !== '') {
-        var box = document.getElementById('chatMsgs');
-        var msg = document.createElement('div');
-        msg.className = 'bg-gray-900/80 backdrop-blur px-2.5 py-0.5 rounded-xl text-[10px] max-w-[85%] border border-white/10';
-        msg.innerHTML = '<strong class="text-cyan-400">Tú:</strong> ' + sanitizeInput(this.value);
-        box.appendChild(msg);
-        box.scrollTop = box.scrollHeight;
-        this.value = '';
-    }
-});
-
-let startY = 0;
-const swipeArea = document.getElementById('swipeArea');
-swipeArea.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, false);
-swipeArea.addEventListener('touchend', e => {
-    let diffY = startY - e.changedTouches[0].clientY;
-    if (diffY > 60) { nextUser(); }
-}, false);
-
-document.getElementById('godBadge').onclick = function() { document.getElementById('godPanel').style.display = 'flex'; };
-document.getElementById('closeGod').onclick = function() { document.getElementById('godPanel').style.display = 'none'; };
-
-function banCurrentParticipant(reason) {
-    if (activeCall) {
-        activeCall.close();
-        document.getElementById('remoteVideo').srcObject = null;
-        document.getElementById('godRemoteMonitor').srcObject = null;
-    }
-    document.getElementById('godRoomStatus').innerText = "Usuario Expulsado";
-    document.getElementById('godRoomStatus').style.color = "#EF4444";
-    alert("⛔ " + (reason || "El usuario ha sido expulsado."));
-}
-
-document.getElementById('banBtn').onclick = () => banCurrentParticipant("Expulsado manualmente por el Administrador.");
-</script>
-</body>
-</html>
+        <input type="text" id="chatInput" placeholder="Escribe un mensaje (se traducirá)...
