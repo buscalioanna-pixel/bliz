@@ -18,11 +18,12 @@ html,body { background:#0B0F19; color:#fff; height:100dvh; width:100vw; display:
 @keyframes slideDown { 0%{transform:translateY(-100%);opacity:0} 100%{transform:translateY(0);opacity:1} }
 .animate-slide-down { animation:slideDown .3s ease-out forwards; }
 #chatInput { user-select:text; }
+input, select { user-select:text; }
 </style>
 </head>
 <body class="flex flex-col h-[100dvh] w-full bg-[#0B0F19]">
 
-<div id="modBanner" class="hidden fixed top-0 left-0 right-0 z-50 bg-red-600/95 text-white text-xs px-4 py-2.5 text-center font-bold shadow-lg backdrop-blur animate-slide-down flex items-center justify-center gap-2">
+<div id="modBanner" class="hidden fixed top-0 left-0 right-0 z-50 bg-red-600/95 text-white text-xs px-4 py-2.5 text-center font-bold shadow-lg backdrop-blur animate-slide-down items-center justify-center gap-2">
   <span>⚠️</span> <span id="modBannerText"></span>
 </div>
 
@@ -31,8 +32,27 @@ html,body { background:#0B0F19; color:#fff; height:100dvh; width:100vw; display:
     <div class="text-3xl font-black bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">⚡ BLIZ</div>
     <p class="text-[11px] text-gray-400">Plataforma de Videochat P2P Segura (+18)</p>
     <div class="flex gap-2 justify-center">
-      <input type="text" id="inputDay" placeholder="Día" maxlength="2" inputmode="numeric" class="w-1/4 p-2 rounded-xl border border-gray-7
-        <header class="flex-none flex items-center px-4 py-2.5 bg-gray-900 border-b border-gray-800">
+      <input type="text" id="inputDay" placeholder="Día" maxlength="2" inputmode="numeric" class="w-1/4 p-2 rounded-xl border border-gray-700 bg-gray-950 text-white text-center text-sm outline-none">
+      <input type="text" id="inputMonth" placeholder="Mes" maxlength="2" inputmode="numeric" class="w-1/4 p-2 rounded-xl border border-gray-700 bg-gray-950 text-white text-center text-sm outline-none">
+      <input type="text" id="inputYear" placeholder="Año" maxlength="4" inputmode="numeric" class="w-2/5 p-2 rounded-xl border border-gray-700 bg-gray-950 text-white text-center text-sm outline-none">
+    </div>
+    <label class="flex items-start gap-2 text-[11px] text-gray-400 text-left">
+      <input type="checkbox" id="acceptCheck" class="mt-0.5">
+      <span>Soy mayor de 18 años y acepto los <a href="#" onclick="openLegalModal('terms');return false" class="text-cyan-400 underline">Términos</a> y la <a href="#" onclick="openLegalModal('privacy');return false" class="text-cyan-400 underline">Política de Privacidad</a>.</span>
+    </label>
+    <button id="btnStartApp" class="w-full py-2.5 rounded-full font-bold text-sm text-white bg-gradient-to-r from-purple-600 to-cyan-500 active:scale-95 transition">Entrar</button>
+  </div>
+</div>
+
+<div id="legalModal" class="hidden fixed inset-0 z-[60] bg-black/80 items-center justify-center p-4">
+  <div class="w-full max-w-xs bg-gray-900 border border-gray-800 rounded-2xl p-4 flex flex-col gap-3">
+    <h2 id="legalTitle" class="font-bold text-sm"></h2>
+    <p id="legalContent" class="text-xs text-gray-300 whitespace-pre-line"></p>
+    <button onclick="closeLegalModal()" class="py-2 rounded-full bg-gray-800 border border-gray-700 text-xs font-bold">Cerrar</button>
+  </div>
+</div>
+
+<header class="flex-none flex items-center px-4 py-2.5 bg-gray-900 border-b border-gray-800">
   <div class="flex items-center gap-2">
     <div class="text-xl font-black bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">⚡ BLIZ</div>
     <div class="flex items-center gap-1 bg-emerald-950/60 border border-emerald-500/40 px-2 py-0.5 rounded-full text-[10px] font-medium text-emerald-400">
@@ -54,11 +74,11 @@ html,body { background:#0B0F19; color:#fff; height:100dvh; width:100vw; display:
       <option value="MALE">👨 Hombre</option><option value="FEMALE">👩 Mujer</option><option value="GROUP">👥 Grupo</option>
     </select>
   </div>
-</div>
-<main class="flex-1 flex flex-col min-h-0 relative p-2 gap-2">
+      </div>
+      <main class="flex-1 flex flex-col min-h-0 relative p-2 gap-2">
   <div id="swipeArea" class="flex-1 min-h-0 relative bg-black rounded-2xl overflow-hidden border border-gray-800 flex justify-center items-center">
     <video id="remoteVideo" autoplay playsinline class="absolute inset-0 w-full h-full object-cover z-0 bg-gray-950"></video>
-    <div id="remoteCountryBadge" class="hidden absolute top-3 left-3 bg-black/60 backdrop-blur-md border border-white/20 text-white px-3 py-1 rounded-full text-xs font-semibold z-20 flex items-center gap-1.5">
+    <div id="remoteCountryBadge" class="hidden absolute top-3 left-3 bg-black/60 backdrop-blur-md border border-white/20 text-white px-3 py-1 rounded-full text-xs font-semibold z-20 items-center gap-1.5">
       <span id="remoteFlag">🌍</span> <span id="remoteCountryName"></span>
     </div>
     <div id="searchState" class="z-10 text-center text-gray-400 pointer-events-none px-6">
@@ -96,8 +116,8 @@ html,body { background:#0B0F19; color:#fff; height:100dvh; width:100vw; display:
     <button id="reportBtn" class="flex-1 py-2.5 rounded-full font-bold text-xs text-white bg-gray-800 border border-gray-700 active:scale-95 transition">⚠️ Reportar</button>
     <button id="nextBtn" onclick="nextUser()" class="flex-1 py-2.5 rounded-full font-bold text-xs text-white bg-gradient-to-r from-purple-600 to-cyan-500 active:scale-95 transition">Siguiente ➔</button>
   </div>
-</main>
-<script>
+      </main>
+      <script>
 const SUPABASE_URL = 'https://zcdgnzbegusizsxozfrr.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_Ro8hhOvmVVpUW7CfRzt88A_IUkQbYv7';
 const sb = (typeof supabase !== 'undefined' && !SUPABASE_KEY.startsWith('PEGA')) ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
@@ -105,11 +125,12 @@ const $ = id => document.getElementById(id);
 const EMOJIS = ['❤️','😂','🔥','👎','👋'];
 const NAMES = { ES:'España', MX:'México', CO:'Colombia', AR:'Argentina', US:'Estados Unidos', CL:'Chile', PE:'Perú', VE:'Venezuela', EC:'Ecuador', UY:'Uruguay', FR:'Francia', IT:'Italia', DE:'Alemania', PT:'Portugal', BR:'Brasil', GB:'Reino Unido' };
 let localStream, peer, myId, myCountry = 'XX', activeCall, dataConn, connected = false;
-let facing = 'user', beauty = false, blocked = [], lastSkip = 0, searchTimer, callTimer;
+let facing = 'user', beauty = false, blocked = [], lastSkip = 0, searchTimer, callTimer, regInterval;
 
 const flagOf = c => (!c || c.length !== 2 || c === 'XX') ? '🌍' : c.toUpperCase().replace(/./g, x => String.fromCodePoint(127397 + x.charCodeAt(0)));
 const nameOf = c => NAMES[c] || c || 'Global';
 const errText = e => e ? (e.message || e.code || JSON.stringify(e)) : '';
+
 async function detectCountry() {
   try { const j = await (await fetch('https://ipapi.co/json/')).json(); if (j && j.country_code) return j.country_code.toUpperCase(); } catch (e) {}
   const l = (navigator.language || '').split('-')[1]; return l ? l.toUpperCase() : 'XX';
@@ -126,6 +147,7 @@ function openLegalModal(t) {
   $('legalModal').style.display = 'flex';
 }
 function closeLegalModal() { $('legalModal').style.display = 'none'; }
+
 function isAdult(d, m, y) {
   if (!(y >= 1900 && m >= 1 && m <= 12 && d >= 1 && d <= 31)) return null;
   const bd = new Date(y, m - 1, d);
@@ -159,7 +181,7 @@ function initPeer() {
     { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' },
     turn('turn:openrelay.metered.ca:80'), turn('turn:openrelay.metered.ca:443'), turn('turn:openrelay.metered.ca:443?transport=tcp')
   ] } });
-  peer.on('open', id => { myId = id; register(); setInterval(register, 10000); nextUser(true); });
+  peer.on('open', id => { myId = id; register(); clearInterval(regInterval); regInterval = setInterval(register, 10000); nextUser(true); });
   peer.on('call', c => {
     if (blocked.includes(c.peer) || activeCall) return c.close();
     clearTimeout(searchTimer); c.answer(localStream); setupCall(c, 'Conectado');
@@ -168,7 +190,8 @@ function initPeer() {
   peer.on('error', e => { console.warn(e); if (e.type === 'peer-unavailable') nextUser(true); });
   peer.on('disconnected', () => { try { peer.reconnect(); } catch (e) {} });
 }
-  function setupCall(c, label, flag) {
+
+function setupCall(c, label, flag) {
   activeCall = c; connected = false;
   c.on('stream', s => { connected = true; clearTimeout(callTimer); $('remoteVideo').srcObject = s; $('searchState').style.display = 'none'; showBadge(flag || '🌍', label); });
   const end = () => { if (activeCall === c) { activeCall = null; connected = false; nextUser(true); } };
@@ -194,8 +217,7 @@ async function register() {
     return error || null;
   } catch (e) { return e; }
 }
-
-async function nextUser(force) {
+        async function nextUser(force) {
   const now = Date.now();
   if (!force && now - lastSkip < 1200) { showSearch('Por favor, ve más despacio...'); setTimeout(() => $('searchText').innerText = 'Buscando usuario en línea...', 1000); return; }
   lastSkip = now; clearTimeout(searchTimer); clearTimeout(callTimer);
@@ -273,8 +295,7 @@ function floatEmoji(e) {
 function sendEmoji(e) { if (e === '👎') modAlert('⚠️ Has enviado un reporte de contenido no deseado.'); floatEmoji(e); send({ t: 'emoji', v: e }); }
 
 window.addEventListener('pagehide', () => { if (myId && sb) sb.from('active_users').delete().eq('id', myId); });
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body>
 </html>
-      
