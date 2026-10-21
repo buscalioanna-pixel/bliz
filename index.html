@@ -9,7 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-<style>
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');<style>
 * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,sans-serif; user-select:none; }
 html,body { background:#0B0F19; color:#fff; height:100dvh; width:100vw; display:flex; flex-direction:column; overflow:hidden; touch-action:manipulation; }
 .beauty-active { filter:brightness(1.12) contrast(1.05) saturate(1.1) blur(0.3px); }
